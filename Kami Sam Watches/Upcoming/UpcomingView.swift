@@ -50,6 +50,7 @@ private struct UpcomingContent: View {
 
 private struct UpcomingReleaseRow: View {
     let release: UpcomingRelease
+    @Environment(\.openURL) private var openURL
 
     var badgeLabel: String {
         switch release.kind {
@@ -91,10 +92,14 @@ private struct UpcomingReleaseRow: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
 
-                    Button("Notify Me") {}
-                        .font(.caption)
-                        .buttonStyle(.bordered)
-                        .controlSize(.mini)
+                    Button("Notify Me") {
+                        if let url = release.googleCalendarURL() {
+                            openURL(url)
+                        }
+                    }
+                    .font(.caption)
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
                 }
                 .padding(.top, 4)
             }
