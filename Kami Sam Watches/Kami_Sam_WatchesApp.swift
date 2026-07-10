@@ -1,11 +1,5 @@
-//
-//  Kami_Sam_WatchesApp.swift
-//  Kami Sam Watches
-//
-//  Created by Sam Leirens on 06/07/2026.
-//
-
 import SwiftUI
+import SwiftData
 
 @main
 struct Kami_Sam_WatchesApp: App {
@@ -13,5 +7,6 @@ struct Kami_Sam_WatchesApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: [TrackedShow.self, WatchEvent.self])
     }
 }

@@ -6,14 +6,35 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C1F2E30000000000000000B2 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C1F2E30000000000000000B1 /* ZIPFoundation */; };
+		C1F2E30000000000000000B4 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C1F2E30000000000000000B3 /* ZIPFoundation */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B1C2D30000000000000000A7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7269D84F2FFC466800E673CA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7269D8562FFC466800E673CA;
+			remoteInfo = "Kami Sam Watches";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		7269D8572FFC466800E673CA /* Kami Sam Watches.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kami Sam Watches.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1C2D30000000000000000A1 /* Kami Sam WatchesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kami Sam WatchesTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7269D8592FFC466800E673CA /* Kami Sam Watches */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Kami Sam Watches";
+			sourceTree = "<group>";
+		};
+		B1C2D30000000000000000A2 /* Kami Sam WatchesTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Kami Sam WatchesTests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +44,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1F2E30000000000000000B2 /* ZIPFoundation in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1C2D30000000000000000A3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C1F2E30000000000000000B4 /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -34,6 +64,7 @@
 			children = (
 				7269D8592FFC466800E673CA /* Kami Sam Watches */,
 				7269D8582FFC466800E673CA /* Products */,
+				72E5BFBA30015C8B00DA0B27 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -41,8 +72,17 @@
 			isa = PBXGroup;
 			children = (
 				7269D8572FFC466800E673CA /* Kami Sam Watches.app */,
+				B1C2D30000000000000000A1 /* Kami Sam WatchesTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		72E5BFBA30015C8B00DA0B27 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				B1C2D30000000000000000A2 /* Kami Sam WatchesTests */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,10 +105,35 @@
 			);
 			name = "Kami Sam Watches";
 			packageProductDependencies = (
+				C1F2E30000000000000000B1 /* ZIPFoundation */,
 			);
 			productName = "Kami Sam Watches";
 			productReference = 7269D8572FFC466800E673CA /* Kami Sam Watches.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B1C2D30000000000000000A6 /* Kami Sam WatchesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1C2D30000000000000000AB /* Build configuration list for PBXNativeTarget "Kami Sam WatchesTests" */;
+			buildPhases = (
+				B1C2D30000000000000000A4 /* Sources */,
+				B1C2D30000000000000000A3 /* Frameworks */,
+				B1C2D30000000000000000A5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B1C2D30000000000000000A8 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B1C2D30000000000000000A2 /* Kami Sam WatchesTests */,
+			);
+			name = "Kami Sam WatchesTests";
+			packageProductDependencies = (
+				C1F2E30000000000000000B3 /* ZIPFoundation */,
+			);
+			productName = "Kami Sam WatchesTests";
+			productReference = B1C2D30000000000000000A1 /* Kami Sam WatchesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -83,6 +148,10 @@
 					7269D8562FFC466800E673CA = {
 						CreatedOnToolsVersion = 26.6;
 					};
+					B1C2D30000000000000000A6 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 7269D8562FFC466800E673CA;
+					};
 				};
 			};
 			buildConfigurationList = 7269D8522FFC466800E673CA /* Build configuration list for PBXProject "Kami Sam Watches" */;
@@ -94,18 +163,29 @@
 			);
 			mainGroup = 7269D84E2FFC466800E673CA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C1F2E30000000000000000B0 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7269D8582FFC466800E673CA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				7269D8562FFC466800E673CA /* Kami Sam Watches */,
+				B1C2D30000000000000000A6 /* Kami Sam WatchesTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		7269D8552FFC466800E673CA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1C2D30000000000000000A5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +202,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B1C2D30000000000000000A4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B1C2D30000000000000000A8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7269D8562FFC466800E673CA /* Kami Sam Watches */;
+			targetProxy = B1C2D30000000000000000A7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		7269D8602FFC466A00E673CA /* Debug */ = {
@@ -251,6 +346,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H5Q7878XLP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -282,6 +378,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H5Q7878XLP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -306,6 +403,52 @@
 			};
 			name = Release;
 		};
+		B1C2D30000000000000000A9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "slic.Kami-Sam-WatchesTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kami Sam Watches.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kami Sam Watches";
+			};
+			name = Debug;
+		};
+		B1C2D30000000000000000AA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "slic.Kami-Sam-WatchesTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kami Sam Watches.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kami Sam Watches";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,7 +470,40 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		B1C2D30000000000000000AB /* Build configuration list for PBXNativeTarget "Kami Sam WatchesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1C2D30000000000000000A9 /* Debug */,
+				B1C2D30000000000000000AA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C1F2E30000000000000000B0 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.19;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C1F2E30000000000000000B1 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C1F2E30000000000000000B0 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		C1F2E30000000000000000B3 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C1F2E30000000000000000B0 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7269D84F2FFC466800E673CA /* Project object */;
 }
