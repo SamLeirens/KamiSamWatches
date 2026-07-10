@@ -16,26 +16,59 @@ final class WatchNextViewModel {
     }
 
     func load() async {
-        isLoading = true
+        if episodes.isEmpty { isLoading = true }
         errorMessage = nil
         do {
             let ids = dataStore.trackedShows.filter { !$0.hiddenFromWatchNext }.map { $0.tmdbId }
-            episodes = try await service.fetchNextEpisodes(showIds: ids, progress: dataStore.progressLookup)
+            var fetched = try await service.fetchNextEpisodes(showIds: ids, progress: dataStore.progressLookup)
+            let lastWatched = dataStore.lastWatchedAt
+            fetched.sort {
+                switch (lastWatched[$0.tmdbShowId], lastWatched[$1.tmdbShowId]) {
+                case (let a?, let b?): return a > b
+                case (.some, .none): return true
+                default: return false
+                }
+            }
+            episodes = fetched
         } catch {
-            errorMessage = error.localizedDescription
+            if episodes.isEmpty { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
 
-    func hideShow(tmdbId: Int) async {
-        dataStore.setHidden(tmdbId: tmdbId, hidden: true)
+    func refresh() async {
+        await TMDB.clearCache()
         await load()
     }
 
+    func hideShow(tmdbId: Int) {
+        dataStore.setHidden(tmdbId: tmdbId, hidden: true)
+        episodes.removeAll { $0.tmdbShowId == tmdbId }
+    }
+
     func markWatched(_ episode: Episode) async {
-        guard let index = episodes.firstIndex(where: { $0.id == episode.id }) else { return }
-        episodes[index].isWatched = true
+        if let i = episodes.firstIndex(where: { $0.id == episode.id }) {
+            episodes[i].isWatched = true
+        }
         dataStore.markWatched(episode: episode)
-        await load()
+        let next = try? await service.fetchNextEpisode(
+            showId: episode.tmdbShowId,
+            progress: dataStore.progress(for: episode.tmdbShowId)
+        )
+        // Re-find the row — the array may have shifted during the await
+        guard let currentIndex = episodes.firstIndex(where: { $0.id == episode.id }) else { return }
+        if let next {
+            episodes[currentIndex] = next
+        } else {
+            episodes.remove(at: currentIndex)
+        }
+        let lastWatched = dataStore.lastWatchedAt
+        episodes.sort {
+            switch (lastWatched[$0.tmdbShowId], lastWatched[$1.tmdbShowId]) {
+            case (let a?, let b?): return a > b
+            case (.some, .none): return true
+            default: return false
+            }
+        }
     }
 }

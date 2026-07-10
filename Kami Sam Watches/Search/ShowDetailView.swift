@@ -11,7 +11,7 @@ private final class ShowDetailViewModel {
     let showName: String
     let posterURL: URL?
 
-    init(show: TMDBSearchResult, tmdb: any TMDBService = LiveTMDBService()) {
+    init(show: TMDBSearchResult, tmdb: any TMDBService = TMDB.shared) {
         self.showId = show.id
         self.showName = show.name
         self.posterURL = show.poster_path.flatMap { URL(string: "https://image.tmdb.org/t/p/w300\($0)") }
@@ -57,7 +57,7 @@ struct ShowDetailView: View {
                 HStack(alignment: .top, spacing: 16) {
                     ThumbnailImage(url: viewModel.posterURL, fallbackIcon: "tv")
                         .frame(width: 80, height: 120)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(.rect(cornerRadius: 8))
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text(viewModel.showName)
@@ -138,7 +138,7 @@ private struct SeasonRow: View {
     let dataStore: DataStore
 
     private var watchedCount: Int {
-        dataStore.watchEvents.filter { $0.tmdbShowId == showId && $0.season == season.season_number }.count
+        dataStore.watchedCount(showId: showId, season: season.season_number)
     }
 
     var body: some View {

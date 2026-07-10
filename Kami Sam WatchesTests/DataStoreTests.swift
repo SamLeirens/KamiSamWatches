@@ -127,14 +127,50 @@ final class DataStoreTests: XCTestCase {
         XCTAssertEqual(store.totalShowsWatched, 2)
     }
 
+    // MARK: - lastWatchedAt
+
+    func testLastWatchedAtNilForShowWithNoEvents() {
+        XCTAssertNil(store.lastWatchedAt[99])
+    }
+
+    func testLastWatchedAtPopulatedAfterMarkingWatched() {
+        let ep = Episode(
+            tmdbShowId: 1, showName: "Show", title: "Ep",
+            season: 1, episodeNumber: 1, durationMinutes: 30,
+            seasonEpisodeCount: 10, thumbnailURL: nil, airDate: nil,
+            badge: nil, isWatched: false
+        )
+        store.markWatched(episode: ep)
+        XCTAssertNotNil(store.lastWatchedAt[1])
+    }
+
+    func testLastWatchedAtReflectsMostRecentEvent() {
+        let older = WatchEvent(tmdbShowId: 1, season: 1, episodeNumber: 1, durationMinutes: 30)
+        older.watchedAt = Date(timeIntervalSinceReferenceDate: 1000)
+        let newer = WatchEvent(tmdbShowId: 1, season: 1, episodeNumber: 2, durationMinutes: 30)
+        newer.watchedAt = Date(timeIntervalSinceReferenceDate: 2000)
+        store.importData(shows: [(tmdbId: 1, name: "Show")], events: [older, newer])
+        XCTAssertEqual(store.lastWatchedAt[1], Date(timeIntervalSinceReferenceDate: 2000))
+    }
+
+    func testLastWatchedAtTracksPerShow() {
+        let ep1 = WatchEvent(tmdbShowId: 1, season: 1, episodeNumber: 1, durationMinutes: 30)
+        ep1.watchedAt = Date(timeIntervalSinceReferenceDate: 1000)
+        let ep2 = WatchEvent(tmdbShowId: 2, season: 1, episodeNumber: 1, durationMinutes: 30)
+        ep2.watchedAt = Date(timeIntervalSinceReferenceDate: 2000)
+        store.importData(shows: [(tmdbId: 1, name: "A"), (tmdbId: 2, name: "B")], events: [ep1, ep2])
+        XCTAssertEqual(store.lastWatchedAt[1], Date(timeIntervalSinceReferenceDate: 1000))
+        XCTAssertEqual(store.lastWatchedAt[2], Date(timeIntervalSinceReferenceDate: 2000))
+    }
+
     // MARK: - markWatched via Episode
 
     func testMarkWatchedEpisodeCreatesWatchEvent() async {
         let ep = Episode(
-            id: UUID(), tmdbShowId: 99, showName: "Show",
+            tmdbShowId: 99, showName: "Show",
             title: "Ep", season: 1, episodeNumber: 3,
             durationMinutes: 50, seasonEpisodeCount: 10,
-            thumbnailURL: nil, badge: nil, isWatched: false
+            thumbnailURL: nil, airDate: nil, badge: nil, isWatched: false
         )
         store.markWatched(episode: ep)
         XCTAssertTrue(store.isWatched(showId: 99, season: 1, episode: 3))

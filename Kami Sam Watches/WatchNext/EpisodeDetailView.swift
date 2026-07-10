@@ -9,7 +9,7 @@ private final class EpisodeDetailViewModel {
 
     private let tmdb: any TMDBService
 
-    init(tmdb: any TMDBService = LiveTMDBService()) {
+    init(tmdb: any TMDBService = TMDB.shared) {
         self.tmdb = tmdb
     }
 

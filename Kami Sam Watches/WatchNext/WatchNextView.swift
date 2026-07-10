@@ -13,14 +13,18 @@ struct WatchNextView: View {
 
     var body: some View {
         NavigationStack {
-            content
+            WatchNextContent(viewModel: viewModel, dataStore: dataStore)
                 .navigationTitle("Watch Next")
         }
         .task { await viewModel.load() }
     }
+}
 
-    @ViewBuilder
-    private var content: some View {
+private struct WatchNextContent: View {
+    let viewModel: WatchNextViewModel
+    let dataStore: DataStore
+
+    var body: some View {
         if viewModel.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -48,7 +52,7 @@ struct WatchNextView: View {
                     }
                     .swipeActions(edge: .trailing) {
                         Button {
-                            Task { await viewModel.hideShow(tmdbId: episode.tmdbShowId) }
+                            viewModel.hideShow(tmdbId: episode.tmdbShowId)
                         } label: {
                             Label(String(localized: "Hide"), systemImage: "eye.slash")
                         }
@@ -57,6 +61,7 @@ struct WatchNextView: View {
                 }
             }
             .listStyle(.plain)
+            .refreshable { await viewModel.refresh() }
         }
     }
 }
@@ -136,7 +141,7 @@ struct ThumbnailImage: View {
         }
         .frame(width: 80, height: 56)
         .background(Color(.systemGray5))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(.rect(cornerRadius: 8))
     }
 }
 

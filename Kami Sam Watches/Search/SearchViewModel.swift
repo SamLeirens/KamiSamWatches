@@ -12,7 +12,7 @@ final class SearchViewModel {
     private let dataStore: DataStore
     private var searchTask: Task<Void, Never>?
 
-    init(tmdb: any TMDBService = LiveTMDBService(), dataStore: DataStore) {
+    init(tmdb: any TMDBService = TMDB.shared, dataStore: DataStore) {
         self.tmdb = tmdb
         self.dataStore = dataStore
     }

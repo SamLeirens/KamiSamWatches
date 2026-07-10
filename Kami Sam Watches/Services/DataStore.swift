@@ -2,10 +2,36 @@ import Foundation
 import SwiftData
 import Observation
 
+// MARK: - Key types for O(1) watched lookups
+
+struct EpisodeKey: Hashable, Sendable {
+    let showId: Int
+    let season: Int
+    let episode: Int
+}
+
+struct SeasonKey: Hashable, Sendable {
+    let showId: Int
+    let season: Int
+}
+
+// MARK: - DataStore
+
 @Observable
 final class DataStore {
     private(set) var trackedShows: [TrackedShow] = []
     private(set) var watchEvents: [WatchEvent] = []
+
+    // Derived state — recomputed once per refresh(), never per-render
+    private(set) var progressLookup: [Int: (season: Int, episode: Int)] = [:]
+    private(set) var lastWatchedAt: [Int: Date] = [:]
+    private(set) var watchedKeys: Set<EpisodeKey> = []
+    private(set) var seasonWatchedCounts: [SeasonKey: Int] = [:]
+    private(set) var showNameLookup: [Int: String] = [:]
+    private(set) var totalEpisodesWatched: Int = 0
+    private(set) var totalSeasonsWatched: Int = 0
+    private(set) var totalShowsWatched: Int = 0
+    private(set) var totalWatchMinutes: Int = 0
 
     private let modelContext: ModelContext
 
@@ -18,17 +44,19 @@ final class DataStore {
     // MARK: - Queries
 
     func progress(for tmdbShowId: Int) -> (season: Int, episode: Int)? {
-        watchEvents
-            .filter { $0.tmdbShowId == tmdbShowId }
-            .sorted { $0.watchedAt > $1.watchedAt }
-            .first
-            .map { ($0.season, $0.episodeNumber) }
+        progressLookup[tmdbShowId]
     }
 
-    var progressLookup: [Int: (season: Int, episode: Int)] {
-        Dictionary(uniqueKeysWithValues: trackedShows.compactMap { show in
-            progress(for: show.tmdbId).map { (show.tmdbId, $0) }
-        })
+    func isWatched(showId: Int, season: Int, episode: Int) -> Bool {
+        watchedKeys.contains(EpisodeKey(showId: showId, season: season, episode: episode))
+    }
+
+    func watchedCount(showId: Int, season: Int) -> Int {
+        seasonWatchedCounts[SeasonKey(showId: showId, season: season), default: 0]
+    }
+
+    func showName(for tmdbId: Int) -> String {
+        showNameLookup[tmdbId] ?? "Unknown Show"
     }
 
     // MARK: - Mutations
@@ -45,10 +73,6 @@ final class DataStore {
         refresh()
     }
 
-    func isWatched(showId: Int, season: Int, episode: Int) -> Bool {
-        watchEvents.contains { $0.tmdbShowId == showId && $0.season == season && $0.episodeNumber == episode }
-    }
-
     func toggleWatched(showId: Int, season: Int, episode: Int, durationMinutes: Int) {
         if let existing = watchEvents.first(where: {
             $0.tmdbShowId == showId && $0.season == season && $0.episodeNumber == episode
@@ -61,20 +85,19 @@ final class DataStore {
         refresh()
     }
 
-    // MARK: - Stats
-
-    var totalEpisodesWatched: Int { watchEvents.count }
-
-    var totalSeasonsWatched: Int {
-        Set(watchEvents.map { "\($0.tmdbShowId)-\($0.season)" }).count
-    }
-
-    var totalShowsWatched: Int {
-        Set(watchEvents.map { $0.tmdbShowId }).count
-    }
-
-    var totalWatchMinutes: Int {
-        watchEvents.reduce(0) { $0 + $1.durationMinutes }
+    func setWatched(showId: Int, season: Int, episodes: [(number: Int, durationMinutes: Int)], watched: Bool) {
+        if watched {
+            for ep in episodes where !isWatched(showId: showId, season: season, episode: ep.number) {
+                modelContext.insert(WatchEvent(tmdbShowId: showId, season: season, episodeNumber: ep.number, durationMinutes: ep.durationMinutes))
+            }
+        } else {
+            let numbers = Set(episodes.map { $0.number })
+            watchEvents
+                .filter { $0.tmdbShowId == showId && $0.season == season && numbers.contains($0.episodeNumber) }
+                .forEach { modelContext.delete($0) }
+        }
+        save()
+        refresh()
     }
 
     func addShow(tmdbId: Int, showName: String) {
@@ -139,6 +162,48 @@ final class DataStore {
     private func refresh() {
         trackedShows = (try? modelContext.fetch(FetchDescriptor<TrackedShow>(sortBy: [SortDescriptor(\.addedAt)]))) ?? []
         watchEvents = (try? modelContext.fetch(FetchDescriptor<WatchEvent>(sortBy: [SortDescriptor(\.watchedAt, order: .reverse)]))) ?? []
+        recomputeDerived()
+    }
+
+    private func recomputeDerived() {
+        showNameLookup = Dictionary(uniqueKeysWithValues: trackedShows.map { ($0.tmdbId, $0.showName) })
+
+        var keys = Set<EpisodeKey>()
+        var seasonCounts: [SeasonKey: Int] = [:]
+        var uniqueSeasons = Set<SeasonKey>()
+        var uniqueShows = Set<Int>()
+        var totalMinutes = 0
+        var progresses: [Int: (season: Int, episode: Int)] = [:]
+        var latestWatched: [Int: Date] = [:]
+
+        // watchEvents is sorted descending by watchedAt — first seen per show is the most recent
+        for event in watchEvents {
+            let eKey = EpisodeKey(showId: event.tmdbShowId, season: event.season, episode: event.episodeNumber)
+            keys.insert(eKey)
+
+            let sKey = SeasonKey(showId: event.tmdbShowId, season: event.season)
+            seasonCounts[sKey, default: 0] += 1
+            uniqueSeasons.insert(sKey)
+            uniqueShows.insert(event.tmdbShowId)
+            totalMinutes += event.durationMinutes
+            if latestWatched[event.tmdbShowId] == nil { latestWatched[event.tmdbShowId] = event.watchedAt }
+
+            let existing = progresses[event.tmdbShowId]
+            if existing == nil
+                || event.season > existing!.season
+                || (event.season == existing!.season && event.episodeNumber > existing!.episode) {
+                progresses[event.tmdbShowId] = (event.season, event.episodeNumber)
+            }
+        }
+
+        watchedKeys = keys
+        seasonWatchedCounts = seasonCounts
+        totalEpisodesWatched = watchEvents.count
+        totalSeasonsWatched = uniqueSeasons.count
+        totalShowsWatched = uniqueShows.count
+        totalWatchMinutes = totalMinutes
+        progressLookup = progresses
+        lastWatchedAt = latestWatched
     }
 
     private func save() {

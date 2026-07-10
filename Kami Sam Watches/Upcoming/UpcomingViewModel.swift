@@ -16,14 +16,19 @@ final class UpcomingViewModel {
     }
 
     func load() async {
-        isLoading = true
+        if releases.isEmpty { isLoading = true }
         errorMessage = nil
         do {
             let ids = dataStore.trackedShows.map { $0.tmdbId }
             releases = try await service.fetchUpcomingReleases(showIds: ids)
         } catch {
-            errorMessage = error.localizedDescription
+            if releases.isEmpty { errorMessage = error.localizedDescription }
         }
         isLoading = false
+    }
+
+    func refresh() async {
+        await TMDB.clearCache()
+        await load()
     }
 }

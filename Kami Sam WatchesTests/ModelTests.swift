@@ -7,10 +7,10 @@ final class ModelTests: XCTestCase {
 
     func testEpisodeLabelFormat() {
         let ep = Episode(
-            id: UUID(), tmdbShowId: 1, showName: "Show", title: "Ep",
+            tmdbShowId: 1, showName: "Show", title: "Ep",
             season: 2, episodeNumber: 5,
             durationMinutes: 45, seasonEpisodeCount: 10,
-            thumbnailURL: nil, badge: nil, isWatched: false
+            thumbnailURL: nil, airDate: nil, badge: nil, isWatched: false
         )
         XCTAssertEqual(ep.label, "S2 E5")
     }
@@ -74,7 +74,7 @@ final class ModelTests: XCTestCase {
         let noon = Calendar.current.date(from: components)!
         let date = Calendar.current.date(byAdding: .day, value: days, to: noon)!
         return UpcomingRelease(
-            id: UUID(), showName: "Show", title: "Ep",
+            tmdbShowId: 1, showName: "Show", title: "Ep",
             kind: .episode(season: 1, episodeNumber: 1),
             overview: "", releaseDate: date, thumbnailURL: nil
         )

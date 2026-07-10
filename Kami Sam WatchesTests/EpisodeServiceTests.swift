@@ -156,6 +156,42 @@ final class EpisodeServiceTests: XCTestCase {
         XCTAssertNil(results[0].badge)
     }
 
+    // MARK: - Unaired episode filtering
+
+    func testUnairedEpisodeIsExcludedFromWatchNext() async throws {
+        let futureDate = String(ISO8601DateFormatter().string(from: Date().addingTimeInterval(7 * 86400)).prefix(10))
+        var mock = MockTMDBService()
+        mock.showDetails[1] = .fixture(id: 1, seasons: [.fixture(number: 1)])
+        mock.seasonDetails["1-1"] = .fixture(episodes: [
+            .fixture(number: 1, season: 1, airDate: futureDate),
+        ])
+        let service = LiveEpisodeService(tmdb: mock)
+        let results = try await service.fetchNextEpisodes(showIds: [1], progress: [:])
+        XCTAssertEqual(results.count, 0)
+    }
+
+    func testAiredEpisodeIsIncluded() async throws {
+        var mock = MockTMDBService()
+        mock.showDetails[1] = .fixture(id: 1, seasons: [.fixture(number: 1)])
+        mock.seasonDetails["1-1"] = .fixture(episodes: [
+            .fixture(number: 1, season: 1, airDate: "2020-01-01"),
+        ])
+        let service = LiveEpisodeService(tmdb: mock)
+        let results = try await service.fetchNextEpisodes(showIds: [1], progress: [:])
+        XCTAssertEqual(results.count, 1)
+    }
+
+    func testEpisodeWithNoAirDateIsIncluded() async throws {
+        var mock = MockTMDBService()
+        mock.showDetails[1] = .fixture(id: 1, seasons: [.fixture(number: 1)])
+        mock.seasonDetails["1-1"] = .fixture(episodes: [
+            .fixture(number: 1, season: 1, airDate: nil),
+        ])
+        let service = LiveEpisodeService(tmdb: mock)
+        let results = try await service.fetchNextEpisodes(showIds: [1], progress: [:])
+        XCTAssertEqual(results.count, 1)
+    }
+
     // MARK: - seasonEpisodeCount is populated
 
     func testSeasonEpisodeCountMatchesActualEpisodes() async throws {

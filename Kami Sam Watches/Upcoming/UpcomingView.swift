@@ -10,14 +10,17 @@ struct UpcomingView: View {
 
     var body: some View {
         NavigationStack {
-            content
+            UpcomingContent(viewModel: viewModel)
                 .navigationTitle("Upcoming")
         }
         .task { await viewModel.load() }
     }
+}
 
-    @ViewBuilder
-    private var content: some View {
+private struct UpcomingContent: View {
+    let viewModel: UpcomingViewModel
+
+    var body: some View {
         if viewModel.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -38,6 +41,7 @@ struct UpcomingView: View {
                 UpcomingReleaseRow(release: release)
             }
             .listStyle(.plain)
+            .refreshable { await viewModel.refresh() }
         }
     }
 }

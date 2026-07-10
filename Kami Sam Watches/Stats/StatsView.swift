@@ -37,7 +37,7 @@ struct StatsView: View {
 
                         Section("History") {
                             ForEach(dataStore.watchEvents) { event in
-                                WatchEventRow(event: event, dataStore: dataStore)
+                                WatchEventRow(event: event, showName: dataStore.showName(for: event.tmdbShowId))
                             }
                         }
                     }
@@ -98,7 +98,7 @@ struct StatsView: View {
             let accessing = url.startAccessingSecurityScopedResource()
             defer { if accessing { url.stopAccessingSecurityScopedResource() } }
             do {
-                let importer = TVTimeImporter(tmdb: LiveTMDBService())
+                let importer = TVTimeImporter(tmdb: TMDB.shared)
                 importSummary = try await importer.run(zipURL: url, dataStore: dataStore) { phase in
                     importPhase = phase
                 }
@@ -167,11 +167,7 @@ private struct StatRow: View {
 
 private struct WatchEventRow: View {
     let event: WatchEvent
-    let dataStore: DataStore
-
-    private var showName: String {
-        dataStore.trackedShows.first(where: { $0.tmdbId == event.tmdbShowId })?.showName ?? "Unknown Show"
-    }
+    let showName: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {

@@ -7,7 +7,7 @@ enum EpisodeBadge: String, Sendable {
 }
 
 struct Episode: Identifiable, Sendable {
-    let id: UUID
+    var id: String { "\(tmdbShowId)-S\(season)E\(episodeNumber)" }
     let tmdbShowId: Int
     let showName: String
     let title: String
@@ -16,6 +16,7 @@ struct Episode: Identifiable, Sendable {
     let durationMinutes: Int
     let seasonEpisodeCount: Int
     let thumbnailURL: URL?
+    let airDate: Date?
     let badge: EpisodeBadge?
     var isWatched: Bool
 

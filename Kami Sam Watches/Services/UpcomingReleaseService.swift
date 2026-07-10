@@ -9,7 +9,7 @@ protocol UpcomingReleaseService: Sendable {
 struct LiveUpcomingReleaseService: UpcomingReleaseService {
     private let tmdb: any TMDBService
 
-    init(tmdb: any TMDBService = LiveTMDBService()) {
+    init(tmdb: any TMDBService = TMDB.shared) {
         self.tmdb = tmdb
     }
 
@@ -32,7 +32,7 @@ struct LiveUpcomingReleaseService: UpcomingReleaseService {
         let show = try await tmdb.fetchShowDetail(id: showId)
         guard let next = show.next_episode_to_air,
               let dateStr = next.air_date,
-              let airDate = Self.dateParser.date(from: dateStr),
+              let airDate = try? Date(dateStr, strategy: Self.dateStrategy),
               airDate > .now
         else { return nil }
 
@@ -49,7 +49,7 @@ struct LiveUpcomingReleaseService: UpcomingReleaseService {
             : .episode(season: next.season_number, episodeNumber: next.episode_number)
 
         return UpcomingRelease(
-            id: UUID(),
+            tmdbShowId: showId,
             showName: show.name,
             title: next.name,
             kind: kind,
@@ -59,9 +59,9 @@ struct LiveUpcomingReleaseService: UpcomingReleaseService {
         )
     }
 
-    private static let dateParser: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
+    private static let dateStrategy = Date.ParseStrategy(
+        format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
+        locale: Locale(identifier: "en_US_POSIX"),
+        timeZone: .gmt
+    )
 }

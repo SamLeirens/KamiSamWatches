@@ -5,6 +5,11 @@ protocol EpisodeService: Sendable {
         showIds: [Int],
         progress: [Int: (season: Int, episode: Int)]
     ) async throws -> [Episode]
+
+    func fetchNextEpisode(
+        showId: Int,
+        progress: (season: Int, episode: Int)?
+    ) async throws -> Episode?
 }
 
 // MARK: - Live
@@ -12,7 +17,7 @@ protocol EpisodeService: Sendable {
 struct LiveEpisodeService: EpisodeService {
     private let tmdb: any TMDBService
 
-    init(tmdb: any TMDBService = LiveTMDBService()) {
+    init(tmdb: any TMDBService = TMDB.shared) {
         self.tmdb = tmdb
     }
 
@@ -32,14 +37,22 @@ struct LiveEpisodeService: EpisodeService {
         }
     }
 
+    func fetchNextEpisode(
+        showId: Int,
+        progress: (season: Int, episode: Int)?
+    ) async throws -> Episode? {
+        try await fetchNext(showId: showId, progress: progress)
+    }
+
     // MARK: Private
 
     private func fetchNext(showId: Int, progress: (season: Int, episode: Int)?) async throws -> Episode? {
         let show = try await tmdb.fetchShowDetail(id: showId)
         guard let (ep, season) = await resolveNextEpisode(showId: showId, show: show, progress: progress) else { return nil }
         let imageURL = tmdb.imageURL(stillPath: ep.still_path) ?? tmdb.imageURL(stillPath: season.poster_path)
+        let airDate = ep.air_date.flatMap { try? Date($0, strategy: Self.dateStrategy) }
+        if let airDate, airDate > .now { return nil }
         return Episode(
-            id: UUID(),
             tmdbShowId: showId,
             showName: show.name,
             title: ep.name,
@@ -48,6 +61,7 @@ struct LiveEpisodeService: EpisodeService {
             durationMinutes: ep.runtime ?? 0,
             seasonEpisodeCount: season.episodes.count,
             thumbnailURL: imageURL,
+            airDate: airDate,
             badge: badge(for: ep, show: show),
             isWatched: false
         )
@@ -94,16 +108,16 @@ struct LiveEpisodeService: EpisodeService {
            last.season_number == ep.season_number,
            last.episode_number == ep.episode_number { return .latest }
         if let dateStr = ep.air_date,
-           let airDate = Self.dateParser.date(from: dateStr),
+           let airDate = try? Date(dateStr, strategy: Self.dateStrategy),
            Calendar.current.dateComponents([.day], from: airDate, to: .now).day.map({ $0 <= 14 }) == true {
             return .new
         }
         return nil
     }
 
-    private static let dateParser: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
+    private static let dateStrategy = Date.ParseStrategy(
+        format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
+        locale: Locale(identifier: "en_US_POSIX"),
+        timeZone: .gmt
+    )
 }

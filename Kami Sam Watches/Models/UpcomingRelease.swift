@@ -13,13 +13,20 @@ enum ReleaseKind: Sendable {
 }
 
 struct UpcomingRelease: Identifiable, Sendable {
-    let id: UUID
+    let tmdbShowId: Int
     let showName: String
     let title: String
     let kind: ReleaseKind
     let overview: String
     let releaseDate: Date
     let thumbnailURL: URL?
+
+    var id: String {
+        switch kind {
+        case .episode(let s, let e): return "\(tmdbShowId)-S\(s)E\(e)"
+        case .seasonPremiere(let s): return "\(tmdbShowId)-S\(s)E1"
+        }
+    }
 
     var releaseDateFormatted: String {
         let cal = Calendar.current

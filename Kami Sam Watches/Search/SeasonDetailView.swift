@@ -8,7 +8,7 @@ private final class SeasonDetailViewModel {
 
     private let tmdb: any TMDBService
 
-    init(tmdb: any TMDBService = LiveTMDBService()) {
+    init(tmdb: any TMDBService = TMDB.shared) {
         self.tmdb = tmdb
     }
 
@@ -36,17 +36,43 @@ struct SeasonDetailView: View {
 
     private var seasonTitle: String { seasonName ?? "Season \(seasonNumber)" }
 
+    var body: some View {
+        SeasonDetailContent(
+            showId: showId,
+            seasonNumber: seasonNumber,
+            dataStore: dataStore,
+            viewModel: viewModel,
+            onMarkAll: markAll
+        )
+        .navigationTitle(seasonTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await viewModel.load(showId: showId, season: seasonNumber) }
+    }
+
+    private func markAll(watched: Bool) {
+        let eps = viewModel.episodes.map { (number: $0.episode_number, durationMinutes: $0.runtime ?? 0) }
+        dataStore.setWatched(showId: showId, season: seasonNumber, episodes: eps, watched: watched)
+    }
+}
+
+private struct SeasonDetailContent: View {
+    let showId: Int
+    let seasonNumber: Int
+    let dataStore: DataStore
+    let viewModel: SeasonDetailViewModel
+    let onMarkAll: (Bool) -> Void
+
     private var watchedCount: Int {
-        dataStore.watchEvents.filter { $0.tmdbShowId == showId && $0.season == seasonNumber }.count
+        dataStore.watchedCount(showId: showId, season: seasonNumber)
     }
 
     var body: some View {
         List {
             if !viewModel.isLoading, !viewModel.episodes.isEmpty {
                 Section {
-                    Button("Mark All Watched") { markAll(watched: true) }
+                    Button("Mark All Watched") { onMarkAll(true) }
                         .frame(maxWidth: .infinity)
-                    Button("Mark All Unwatched") { markAll(watched: false) }
+                    Button("Mark All Unwatched") { onMarkAll(false) }
                         .frame(maxWidth: .infinity)
                         .foregroundStyle(.secondary)
                 }
@@ -72,23 +98,6 @@ struct SeasonDetailView: View {
                 Text(error).foregroundStyle(.red).font(.caption)
             }
         }
-        .navigationTitle(seasonTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.load(showId: showId, season: seasonNumber) }
-    }
-
-    private func markAll(watched: Bool) {
-        for ep in viewModel.episodes {
-            let currently = dataStore.isWatched(showId: showId, season: seasonNumber, episode: ep.episode_number)
-            if watched != currently {
-                dataStore.toggleWatched(
-                    showId: showId,
-                    season: seasonNumber,
-                    episode: ep.episode_number,
-                    durationMinutes: ep.runtime ?? 0
-                )
-            }
-        }
     }
 }
 
@@ -100,38 +109,40 @@ private struct EpisodeToggleRow: View {
     let onToggle: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
-                .font(.title3)
-                .foregroundStyle(isWatched ? .green : .secondary)
+        Button(action: onToggle) {
+            HStack(spacing: 12) {
+                Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isWatched ? .green : .secondary)
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text("E\(episode.episode_number)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(episode.name)
-                        .font(.body)
-                        .foregroundStyle(isWatched ? .secondary : .primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text("E\(episode.episode_number)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(episode.name)
+                            .font(.body)
+                            .foregroundStyle(isWatched ? .secondary : .primary)
+                    }
+
+                    HStack(spacing: 8) {
+                        if let dateStr = episode.air_date {
+                            Text(dateStr)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        if let runtime = episode.runtime, runtime > 0 {
+                            Text("· \(runtime) min")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
 
-                HStack(spacing: 8) {
-                    if let dateStr = episode.air_date {
-                        Text(dateStr)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                    if let runtime = episode.runtime, runtime > 0 {
-                        Text("· \(runtime) min")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
+                Spacer()
             }
-
-            Spacer()
+            .contentShape(Rectangle())
         }
-        .contentShape(Rectangle())
-        .onTapGesture { onToggle() }
+        .buttonStyle(.plain)
     }
 }
