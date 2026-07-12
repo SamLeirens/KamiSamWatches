@@ -9,12 +9,21 @@ struct StatsView: View {
     @State private var importSummary: TVTimeImporter.Summary?
     @State private var importError: String?
 
-    private var hours: Int { dataStore.totalWatchMinutes / 60 }
-    private var minutes: Int { dataStore.totalWatchMinutes % 60 }
-
     private var watchTimeLabel: String {
-        if hours > 0 { return "\(hours)h \(minutes)m" }
-        return "\(minutes)m"
+        let total = dataStore.totalWatchMinutes
+        let mins = total % 60
+        let totalHours = total / 60
+        let hrs = totalHours % 24
+        let totalDays = totalHours / 24
+        let days = totalDays % 30
+        let months = totalDays / 30
+
+        var parts: [String] = []
+        if months > 0 { parts.append("\(months)mo") }
+        if days   > 0 { parts.append("\(days)d") }
+        if hrs    > 0 { parts.append("\(hrs)h") }
+        if mins   > 0 || parts.isEmpty { parts.append("\(mins)m") }
+        return parts.joined(separator: " ")
     }
 
     var body: some View {
