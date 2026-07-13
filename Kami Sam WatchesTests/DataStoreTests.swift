@@ -176,4 +176,38 @@ final class DataStoreTests: XCTestCase {
         XCTAssertTrue(store.isWatched(showId: 99, season: 1, episode: 3))
         XCTAssertEqual(store.totalWatchMinutes, 50)
     }
+
+    // MARK: - seasonProgress
+
+    func testSeasonProgressNilWhenTotalIsNil() {
+        XCTAssertNil(store.seasonProgress(showId: 1, season: 1, totalEpisodes: nil))
+    }
+
+    func testSeasonProgressNilWhenTotalIsZero() {
+        XCTAssertNil(store.seasonProgress(showId: 1, season: 1, totalEpisodes: 0))
+    }
+
+    func testSeasonProgressZeroWhenNoneWatched() {
+        XCTAssertEqual(store.seasonProgress(showId: 1, season: 1, totalEpisodes: 10), 0.0)
+    }
+
+    func testSeasonProgressFractionWhenSomeWatched() throws {
+        store.toggleWatched(showId: 1, season: 1, episode: 1, durationMinutes: 45)
+        store.toggleWatched(showId: 1, season: 1, episode: 2, durationMinutes: 45)
+        let p = store.seasonProgress(showId: 1, season: 1, totalEpisodes: 4)
+        XCTAssertEqual(try XCTUnwrap(p), 0.5, accuracy: 0.001)
+    }
+
+    func testSeasonProgressClampedAtOne() {
+        for ep in 1...5 {
+            store.toggleWatched(showId: 1, season: 1, episode: ep, durationMinutes: 45)
+        }
+        // Un-toggle then re-toggle to simulate dedup bypass by using importData
+        let events = (6...8).map { ep -> WatchEvent in
+            WatchEvent(tmdbShowId: 1, season: 1, episodeNumber: ep, durationMinutes: 45)
+        }
+        store.importData(shows: [], events: events)
+        let p = store.seasonProgress(showId: 1, season: 1, totalEpisodes: 5)
+        XCTAssertEqual(p, 1.0)
+    }
 }

@@ -23,9 +23,16 @@ struct TMDBShowDetail: Decodable, Sendable {
     let id: Int
     let name: String
     let overview: String?
+    let backdrop_path: String?
+    let poster_path: String?
+    let first_air_date: String?
     let seasons: [Season]
     let next_episode_to_air: TMDBEpisode?
     let last_episode_to_air: TMDBEpisode?
+
+    var firstAirYear: String? {
+        first_air_date.flatMap { $0.split(separator: "-").first.map(String.init) }
+    }
 }
 
 struct TMDBSeasonDetail: Decodable, Sendable {
@@ -56,10 +63,8 @@ protocol TMDBService: Sendable {
 }
 
 extension TMDBService {
-    static var imageBase: String { "https://image.tmdb.org/t/p/w300" }
-
     func imageURL(stillPath: String?) -> URL? {
-        stillPath.flatMap { URL(string: Self.imageBase + $0) }
+        TMDBFormat.imageURL(path: stillPath)
     }
 }
 
@@ -95,7 +100,10 @@ struct LiveTMDBService: TMDBService {
     private func fetch(_ url: URL) async throws -> Data {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(Secrets.tmdbBearerToken)", forHTTPHeaderField: "Authorization")
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
         return data
     }
 }

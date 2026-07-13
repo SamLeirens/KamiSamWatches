@@ -21,4 +21,9 @@ struct Episode: Identifiable, Sendable {
     var isWatched: Bool
 
     var label: String { "S\(season) E\(episodeNumber)" }
+
+    var seasonProgress: Double? {
+        guard seasonEpisodeCount > 0 else { return nil }
+        return Double(episodeNumber - 1) / Double(seasonEpisodeCount)
+    }
 }

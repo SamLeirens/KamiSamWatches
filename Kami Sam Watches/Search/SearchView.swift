@@ -13,18 +13,22 @@ struct SearchView: View {
 
     var body: some View {
         NavigationStack {
-            content
+            SearchContent(viewModel: viewModel, onSelect: { selectedShow = $0 })
                 .navigationTitle("Search")
                 .navigationDestination(item: $selectedShow) { show in
-                    ShowDetailView(show: show, dataStore: dataStore)
+                    ShowDetailView(showId: show.id, showName: show.name, dataStore: dataStore)
                 }
         }
         .searchable(text: $viewModel.query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search TV shows")
         .onChange(of: viewModel.query) { viewModel.search() }
     }
+}
 
-    @ViewBuilder
-    private var content: some View {
+private struct SearchContent: View {
+    let viewModel: SearchViewModel
+    let onSelect: (TMDBSearchResult) -> Void
+
+    var body: some View {
         if viewModel.isLoading {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -41,9 +45,10 @@ struct SearchView: View {
                 SearchResultRow(
                     show: show,
                     isTracking: viewModel.isTracking(show),
-                    onTap: { selectedShow = show },
+                    onTap: { onSelect(show) },
                     onToggleTracking: { viewModel.toggleTracking(show) }
                 )
+                .cardRow()
             }
             .listStyle(.plain)
         }
@@ -59,50 +64,62 @@ private struct SearchResultRow: View {
     let onToggleTracking: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ThumbnailImage(url: show.poster_path.flatMap { URL(string: "https://image.tmdb.org/t/p/w300\($0)") }, fallbackIcon: "tv")
+        Button(action: onTap) {
+            HStack(alignment: .top, spacing: 12) {
+                ThumbnailImage(url: TMDBFormat.imageURL(path: show.poster_path), fallbackIcon: "tv", size: .poster)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(show.name)
-                    .font(.headline)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(show.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
 
-                if let year = show.firstAirYear {
-                    Text(year)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                    if let year = show.firstAirYear {
+                        Text(year)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-                if let overview = show.overview, !overview.isEmpty {
-                    Text(overview)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .padding(.top, 1)
-                }
+                    if let overview = show.overview, !overview.isEmpty {
+                        Text(overview)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .padding(.top, 1)
+                    }
 
-                HStack {
-                    if let rating = show.vote_average, rating > 0 {
-                        Label(String(format: "%.1f", rating), systemImage: "star.fill")
+                    HStack {
+                        if let rating = show.vote_average, rating > 0 {
+                            Label {
+                                Text(rating, format: .number.precision(.fractionLength(1)))
+                            } icon: {
+                                Image(systemName: "star.fill")
+                            }
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
+                            .foregroundStyle(Color.accentColor)
+                        }
 
-                    Spacer()
+                        Spacer()
 
-                    Button(action: onToggleTracking) {
-                        Label(isTracking ? "Tracking" : "Track", systemImage: isTracking ? "checkmark" : "plus")
+                        Button(action: onToggleTracking) {
+                            Label(
+                                isTracking ? "Tracking" : "Track",
+                                systemImage: isTracking ? "checkmark" : "plus"
+                            )
+                        }
+                        .font(.caption)
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
+                        .controlSize(.small)
+                        .tint(isTracking ? .green : .accentColor)
                     }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-                    .controlSize(.mini)
-                    .tint(isTracking ? .green : .accentColor)
+                    .padding(.top, 4)
                 }
-                .padding(.top, 4)
             }
         }
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
-        .onTapGesture { onTap() }
+        .buttonStyle(.plain)
     }
 }
 

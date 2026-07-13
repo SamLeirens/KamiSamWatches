@@ -25,12 +25,12 @@ struct LiveEpisodeService: EpisodeService {
         showIds: [Int],
         progress: [Int: (season: Int, episode: Int)]
     ) async throws -> [Episode] {
-        try await withThrowingTaskGroup(of: (Int, Episode?).self) { group in
+        await withTaskGroup(of: (Int, Episode?).self) { group in
             for (index, showId) in showIds.enumerated() {
-                group.addTask { (index, try await fetchNext(showId: showId, progress: progress[showId])) }
+                group.addTask { (index, try? await fetchNext(showId: showId, progress: progress[showId])) }
             }
             var results: [(Int, Episode)] = []
-            for try await (i, ep) in group {
+            for await (i, ep) in group {
                 if let ep { results.append((i, ep)) }
             }
             return results.sorted { $0.0 < $1.0 }.map { $0.1 }
@@ -50,7 +50,7 @@ struct LiveEpisodeService: EpisodeService {
         let show = try await tmdb.fetchShowDetail(id: showId)
         guard let (ep, season) = await resolveNextEpisode(showId: showId, show: show, progress: progress) else { return nil }
         let imageURL = tmdb.imageURL(stillPath: ep.still_path) ?? tmdb.imageURL(stillPath: season.poster_path)
-        let airDate = ep.air_date.flatMap { try? Date($0, strategy: Self.dateStrategy) }
+        let airDate = TMDBFormat.parseDate(ep.air_date)
         if let airDate, airDate > .now { return nil }
         return Episode(
             tmdbShowId: showId,
@@ -108,16 +108,11 @@ struct LiveEpisodeService: EpisodeService {
            last.season_number == ep.season_number,
            last.episode_number == ep.episode_number { return .latest }
         if let dateStr = ep.air_date,
-           let airDate = try? Date(dateStr, strategy: Self.dateStrategy),
+           let airDate = TMDBFormat.parseDate(dateStr),
            Calendar.current.dateComponents([.day], from: airDate, to: .now).day.map({ $0 <= 14 }) == true {
             return .new
         }
         return nil
     }
 
-    private static let dateStrategy = Date.ParseStrategy(
-        format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
-        locale: Locale(identifier: "en_US_POSIX"),
-        timeZone: .gmt
-    )
 }

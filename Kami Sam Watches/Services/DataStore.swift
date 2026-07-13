@@ -55,6 +55,12 @@ final class DataStore {
         seasonWatchedCounts[SeasonKey(showId: showId, season: season), default: 0]
     }
 
+    func seasonProgress(showId: Int, season: Int, totalEpisodes: Int?) -> Double? {
+        guard let total = totalEpisodes, total > 0 else { return nil }
+        let watched = watchedCount(showId: showId, season: season)
+        return min(1.0, Double(watched) / Double(total))
+    }
+
     func showName(for tmdbId: Int) -> String {
         showNameLookup[tmdbId] ?? "Unknown Show"
     }

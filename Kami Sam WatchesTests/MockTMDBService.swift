@@ -61,12 +61,18 @@ extension TMDBShowDetail {
         name: String = "Test Show",
         seasons: [TMDBShowDetail.Season] = [.fixture()],
         nextEpisode: TMDBEpisode? = nil,
-        lastEpisode: TMDBEpisode? = nil
+        lastEpisode: TMDBEpisode? = nil,
+        backdropPath: String? = nil,
+        posterPath: String? = nil,
+        firstAirDate: String? = nil
     ) -> TMDBShowDetail {
         TMDBShowDetail(
             id: id,
             name: name,
             overview: nil,
+            backdrop_path: backdropPath,
+            poster_path: posterPath,
+            first_air_date: firstAirDate,
             seasons: seasons,
             next_episode_to_air: nextEpisode,
             last_episode_to_air: lastEpisode

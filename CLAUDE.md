@@ -72,16 +72,17 @@ Feature Views (one folder per tab)
 - **`DataStore`** (`Services/DataStore.swift`) is the single mutation point: add/remove/hide shows, mark/toggle watched, TV Time bulk import with dedup, stats aggregates, and `progressLookup` ([tmdbId: (season, episode)] of last-watched). It refetches both tables after every mutation (`refresh()`), so views observing it update automatically.
 - **Services are protocols with `Live*` structs** defaulted in ViewModel initializers; tests inject `MockTMDBService`. `TMDBService` is the low-level REST client (show detail, season detail, search, TVDB-id lookup; bearer auth from `Secrets`). `EpisodeService` and `UpcomingReleaseService` compose it with `withThrowingTaskGroup` for parallel per-show fetches.
 - **Entry**: `Kami_Sam_WatchesApp` sets up the model container → `ContentView` builds the `DataStore` and a dark-mode `TabView` with the four tabs.
-- **Shared UI**: `ThumbnailImage` and `BadgeChip` live in `WatchNext/WatchNextView.swift` and are reused by other tabs.
+- **Shared UI**: `ThumbnailImage`, `BadgeChip`, `Theme`, and `cardRow()` live in `Kami Sam Watches/Shared/`. `ThumbnailSize` controls aspect-ratio variants (`.still`, `.stillLarge`, `.poster`, `.posterLarge`). `TMDBFormat` (`Services/TMDBFormat.swift`) owns the shared TMDB date parser and image URL builder.
+- **Image/date helpers**: `CachingTMDBService` and `TMDBCache` (`Services/`) wrap `LiveTMDBService` with a 30-minute in-memory cache; `TMDB.shared` is the singleton entry point used by all ViewModels.
 
 ## Feature Map
 
 | Tab | Folder | What it does |
 |---|---|---|
-| **Watch Next** | `WatchNext/` | For each tracked (non-hidden) show, shows the next unwatched episode. `LiveEpisodeService.resolveNextEpisode` takes last progress, tries episode+1 in the same season, then falls to the next season's E1. Badges: `.premiere` (E1), `.latest` (matches `last_episode_to_air`), `.new` (aired ≤14 days ago). Row actions: Mark Watched, swipe-to-hide show. |
-| **Upcoming** | `Upcoming/` | Future releases for all tracked shows, from TMDB `next_episode_to_air`, sorted by date. `ReleaseKind` distinguishes season premieres from regular episodes; relative date labels ("Today", "Tomorrow", "in N days"). |
-| **Search** | `Search/` | TMDB TV search with 350 ms debounce (`SearchViewModel.search`). Rows track/untrack shows; tapping opens `ShowDetailView` (poster, overview, season list with per-season watched counts) → `SeasonDetailView` (episode list with toggle-watched). `ShowDetailViewModel` is private inside `ShowDetailView.swift`. |
-| **Stats** | `Stats/` | Aggregates from `DataStore` (episodes/seasons/shows watched, total watch time) plus full watch-event history. Toolbar menu hosts **Import from TV Time**: `.fileImporter` for a ZIP → `TVTimeImporter`. |
+| **Watch Next** | `WatchNext/` | For each tracked (non-hidden) show, shows the next unwatched episode. `LiveEpisodeService.resolveNextEpisode` takes last progress, tries episode+1 in the same season, then falls to the next season's E1. Badges: `.premiere` (E1), `.latest` (matches `last_episode_to_air`), `.new` (aired ≤14 days ago). Filter chips All/New/Premieres are driven by `WatchNextFilter` (logic in `WatchNextViewModel.filteredEpisodes`). Row actions: Mark Watched, swipe-to-hide show. Season progress bar derived from `Episode.seasonProgress`. |
+| **Upcoming** | `Upcoming/` | Future releases for all tracked shows, from TMDB `next_episode_to_air`, sorted by date. `ReleaseKind` distinguishes season premieres from regular episodes; date block shows day number + month abbreviation (`UpcomingRelease.releaseDayNumber`/`releaseMonthAbbrev`); relative date labels ("Today", "Tomorrow", "in N days"). |
+| **Search** | `Search/` | TMDB TV search with 350 ms debounce (`SearchViewModel.search`). Portrait poster thumbnails (`.poster` size). Rows track/untrack shows; tapping opens `ShowDetailView` (backdrop hero header, poster, overview, season list with `ProgressView` per season via `DataStore.seasonProgress`) → `SeasonDetailView` (episode list with episode still thumbnails, overview, toggle-watched). `ShowDetailViewModel` is private inside `ShowDetailView.swift`. |
+| **Stats** | `Stats/` | `StatsViewModel` (owned by `StatsView`) computes `watchTimeLabel` (mo/d/h/m) and `monthlyActivity` ([MonthlyActivity]) for a 12-month zero-filled bar chart. 2×2 metric tile grid + Swift Charts `BarMark` activity chart + watch-event history list. Toolbar menu hosts **Import from TV Time**: `.fileImporter` for a ZIP → `TVTimeImporter`. |
 
 **TV Time import** (`Services/TVTimeImporter.swift`): unzips the export (ZIPFoundation), finds `tracking-prod-records-v2.csv`, parses it with the in-file RFC 4180 `CSVParser`, keeps `watch-episode`/`rewatch-episode` rows, resolves each TVDB show id to TMDB (`findShow(tvdbId:)`, falling back to name search), then bulk-inserts via `DataStore.importData` which skips episodes already recorded. Progress is reported through a `Phase` callback rendered as an overlay in Stats.
 
@@ -90,6 +91,6 @@ Feature Views (one folder per tab)
 Unit tests only (XCTest) in `Kami Sam WatchesTests/`:
 - `MockTMDBService.swift` — configurable mock used by all service tests; extend it rather than creating new mocks.
 - `DataStoreTests` use an in-memory `ModelContainer` (`ModelConfiguration(isStoredInMemoryOnly: true)`); note `DataStore.init` seeds 5 default shows when the store is empty — tests must account for that.
-- Coverage exists for models, `EpisodeService` next-episode resolution, `UpcomingReleaseService`, `TVTimeImporter`/CSV parsing, and `DataStore` mutations/import dedup.
+- Coverage exists for models, `EpisodeService` next-episode resolution, `UpcomingReleaseService`, `TVTimeImporter`/CSV parsing, `DataStore` mutations/import dedup/`seasonProgress`, `WatchNextViewModelTests` (filter logic), and `StatsViewModelTests` (monthly bucketing, `watchTimeLabel`).
 
 New logic goes in ViewModels or Services so it is testable; add tests alongside in the same style.

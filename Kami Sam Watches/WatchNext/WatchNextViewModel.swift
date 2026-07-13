@@ -4,8 +4,13 @@ import Observation
 @Observable
 final class WatchNextViewModel {
     var episodes: [Episode] = []
+    var filter: WatchNextFilter = .all
     var isLoading = false
     var errorMessage: String?
+
+    var filteredEpisodes: [Episode] {
+        episodes.filter { filter.matches($0) }
+    }
 
     private let service: any EpisodeService
     private let dataStore: DataStore

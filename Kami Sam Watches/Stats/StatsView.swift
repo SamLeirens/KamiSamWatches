@@ -1,29 +1,19 @@
 import SwiftUI
+import Charts
 import UniformTypeIdentifiers
 
 struct StatsView: View {
     let dataStore: DataStore
 
+    @State private var viewModel: StatsViewModel
     @State private var showsFileImporter = false
     @State private var importPhase: TVTimeImporter.Phase?
     @State private var importSummary: TVTimeImporter.Summary?
     @State private var importError: String?
 
-    private var watchTimeLabel: String {
-        let total = dataStore.totalWatchMinutes
-        let mins = total % 60
-        let totalHours = total / 60
-        let hrs = totalHours % 24
-        let totalDays = totalHours / 24
-        let days = totalDays % 30
-        let months = totalDays / 30
-
-        var parts: [String] = []
-        if months > 0 { parts.append("\(months)mo") }
-        if days   > 0 { parts.append("\(days)d") }
-        if hrs    > 0 { parts.append("\(hrs)h") }
-        if mins   > 0 || parts.isEmpty { parts.append("\(mins)m") }
-        return parts.joined(separator: " ")
+    init(dataStore: DataStore) {
+        self.dataStore = dataStore
+        _viewModel = State(initialValue: StatsViewModel(dataStore: dataStore))
     }
 
     var body: some View {
@@ -37,12 +27,15 @@ struct StatsView: View {
                     )
                 } else {
                     List {
-                        Section {
-                            StatRow(label: "Episodes Watched", value: "\(dataStore.totalEpisodesWatched)")
-                            StatRow(label: "Seasons Completed", value: "\(dataStore.totalSeasonsWatched)")
-                            StatRow(label: "Shows Watched", value: "\(dataStore.totalShowsWatched)")
-                            StatRow(label: "Total Watch Time", value: watchTimeLabel)
-                        }
+                        MetricTileGrid(dataStore: dataStore, viewModel: viewModel)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+
+                        ActivityChartSection(activity: viewModel.monthlyActivity)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
 
                         Section("History") {
                             ForEach(dataStore.watchEvents) { event in
@@ -50,6 +43,7 @@ struct StatsView: View {
                             }
                         }
                     }
+                    .listStyle(.plain)
                 }
             }
             .navigationTitle("Stats")
@@ -87,7 +81,7 @@ struct StatsView: View {
             ) { _ in
                 Button(String(localized: "OK"), role: .cancel) {}
             } message: { summary in
-                Text(summaryMessage(summary))
+                Text(viewModel.importSummaryMessage(summary))
             }
             .alert(
                 String(localized: "Import Failed"),
@@ -117,17 +111,84 @@ struct StatsView: View {
         }
     }
 
-    private func summaryMessage(_ summary: TVTimeImporter.Summary) -> String {
-        var lines = [
-            String(localized: "\(summary.episodesImported) episodes imported across \(summary.showsAdded) new shows.")
-        ]
-        if summary.duplicatesSkipped > 0 {
-            lines.append(String(localized: "\(summary.duplicatesSkipped) duplicates skipped."))
+}
+
+// MARK: - Metric tiles
+
+private struct MetricTileGrid: View {
+    let dataStore: DataStore
+    let viewModel: StatsViewModel
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            MetricTile(icon: "play.circle", value: "\(dataStore.totalEpisodesWatched)", label: "Episodes")
+            MetricTile(icon: "square.stack", value: "\(dataStore.totalSeasonsWatched)", label: "Seasons")
+            MetricTile(icon: "list.bullet.below.rectangle", value: "\(dataStore.totalShowsWatched)", label: "Shows")
+            MetricTile(icon: "clock", value: viewModel.watchTimeLabel, label: "Watch time")
         }
-        if !summary.unresolvedShows.isEmpty {
-            lines.append(String(localized: "Couldn't match: \(summary.unresolvedShows.joined(separator: ", "))"))
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+    }
+}
+
+private struct MetricTile: View {
+    let icon: String
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: icon)
+                .foregroundStyle(Color.accentColor)
+                .font(.title3)
+
+            Text(value)
+                .font(.title2)
+                .bold()
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        return lines.joined(separator: "\n")
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Theme.cardBackground, in: .rect(cornerRadius: Theme.cardCornerRadius))
+    }
+}
+
+// MARK: - Activity chart
+
+private struct ActivityChartSection: View {
+    let activity: [MonthlyActivity]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Episodes per month")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            Chart(activity) { item in
+                BarMark(
+                    x: .value("Month", item.month, unit: .month),
+                    y: .value("Episodes", item.count)
+                )
+                .foregroundStyle(Color.accentColor.gradient)
+                .cornerRadius(4)
+            }
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .month, count: 2)) { value in
+                    AxisValueLabel(format: .dateTime.month(.abbreviated))
+                }
+            }
+            .frame(height: 140)
+        }
+        .padding(14)
+        .background(Theme.cardBackground, in: .rect(cornerRadius: Theme.cardCornerRadius))
+        .padding(.bottom, 8)
     }
 }
 
@@ -159,39 +220,24 @@ private struct ImportProgressOverlay: View {
     }
 }
 
-private struct StatRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-            Spacer()
-            Text(value)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-        }
-    }
-}
-
 private struct WatchEventRow: View {
     let event: WatchEvent
     let showName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(showName)
-                .font(.subheadline)
-                .fontWeight(.medium)
-            HStack {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(showName)
+                    .font(.subheadline)
+                    .bold()
                 Text("S\(event.season) E\(event.episodeNumber)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer()
-                Text(event.watchedAt.formatted(date: .abbreviated, time: .omitted))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
             }
+            Spacer()
+            Text(event.watchedAt, format: .dateTime.day().month(.abbreviated))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 2)
     }

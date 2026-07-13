@@ -39,6 +39,7 @@ struct SeasonDetailView: View {
     var body: some View {
         SeasonDetailContent(
             showId: showId,
+            showName: showName,
             seasonNumber: seasonNumber,
             dataStore: dataStore,
             viewModel: viewModel,
@@ -57,6 +58,7 @@ struct SeasonDetailView: View {
 
 private struct SeasonDetailContent: View {
     let showId: Int
+    let showName: String
     let seasonNumber: Int
     let dataStore: DataStore
     let viewModel: SeasonDetailViewModel
@@ -68,13 +70,30 @@ private struct SeasonDetailContent: View {
 
     var body: some View {
         List {
+            Section {
+                NavigationLink {
+                    ShowDetailView(showId: showId, showName: showName, dataStore: dataStore)
+                } label: {
+                    Label("View Series", systemImage: "tv")
+                }
+            }
+
             if !viewModel.isLoading, !viewModel.episodes.isEmpty {
                 Section {
-                    Button("Mark All Watched") { onMarkAll(true) }
-                        .frame(maxWidth: .infinity)
-                    Button("Mark All Unwatched") { onMarkAll(false) }
-                        .frame(maxWidth: .infinity)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        Button("Mark all watched") { onMarkAll(true) }
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.small)
+                            .frame(maxWidth: .infinity)
+                        Button("Mark all unwatched") { onMarkAll(false) }
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.small)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .listRowSeparator(.hidden)
                 }
 
                 Section("\(watchedCount) of \(viewModel.episodes.count) watched") {
@@ -108,14 +127,28 @@ private struct EpisodeToggleRow: View {
     let isWatched: Bool
     let onToggle: () -> Void
 
+    private var airDate: Date? {
+        TMDBFormat.parseDate(episode.air_date)
+    }
+
     var body: some View {
         Button(action: onToggle) {
             HStack(spacing: 12) {
-                Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(isWatched ? .green : .secondary)
+                ThumbnailImage(
+                    url: TMDBFormat.imageURL(path: episode.still_path),
+                    fallbackIcon: "play.rectangle",
+                    size: .still
+                )
+                .overlay(alignment: .topLeading) {
+                    if isWatched {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .background(.black.opacity(0.5), in: Circle())
+                            .padding(4)
+                    }
+                }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text("E\(episode.episode_number)")
                             .font(.caption)
@@ -125,9 +158,16 @@ private struct EpisodeToggleRow: View {
                             .foregroundStyle(isWatched ? .secondary : .primary)
                     }
 
-                    HStack(spacing: 8) {
-                        if let dateStr = episode.air_date {
-                            Text(dateStr)
+                    if let overview = episode.overview, !overview.isEmpty {
+                        Text(overview)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    HStack(spacing: 6) {
+                        if let date = airDate {
+                            Text(date, format: .dateTime.day().month(.abbreviated).year())
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                         }

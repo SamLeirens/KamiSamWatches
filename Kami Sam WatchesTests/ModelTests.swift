@@ -65,7 +65,64 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(EpisodeBadge.premiere.rawValue, "Premiere")
     }
 
+    // MARK: - Episode.seasonProgress
+
+    func testSeasonProgressForFirstEpisodeIsZero() {
+        let ep = makeEpisode(episodeNumber: 1, seasonEpisodeCount: 10)
+        XCTAssertEqual(ep.seasonProgress, 0.0)
+    }
+
+    func testSeasonProgressMidSeason() throws {
+        let ep = makeEpisode(episodeNumber: 6, seasonEpisodeCount: 10)
+        XCTAssertEqual(try XCTUnwrap(ep.seasonProgress), 0.5, accuracy: 0.001)
+    }
+
+    func testSeasonProgressLastEpisodeIsNearlyOne() throws {
+        let ep = makeEpisode(episodeNumber: 10, seasonEpisodeCount: 10)
+        XCTAssertEqual(try XCTUnwrap(ep.seasonProgress), 0.9, accuracy: 0.001)
+    }
+
+    func testSeasonProgressNilWhenCountIsZero() {
+        let ep = makeEpisode(episodeNumber: 1, seasonEpisodeCount: 0)
+        XCTAssertNil(ep.seasonProgress)
+    }
+
+    // MARK: - UpcomingRelease date components
+
+    func testReleaseDayNumber() {
+        var components = DateComponents()
+        components.year = 2025; components.month = 8; components.day = 14
+        let date = Calendar.current.date(from: components)!
+        let release = UpcomingRelease(
+            tmdbShowId: 1, showName: "Show", title: "Ep",
+            kind: .episode(season: 1, episodeNumber: 2),
+            overview: "", releaseDate: date, thumbnailURL: nil
+        )
+        XCTAssertEqual(release.releaseDayNumber, "14")
+    }
+
+    func testReleaseMonthAbbrev() {
+        var components = DateComponents()
+        components.year = 2025; components.month = 8; components.day = 14
+        let date = Calendar.current.date(from: components)!
+        let release = UpcomingRelease(
+            tmdbShowId: 1, showName: "Show", title: "Ep",
+            kind: .episode(season: 1, episodeNumber: 2),
+            overview: "", releaseDate: date, thumbnailURL: nil
+        )
+        XCTAssertFalse(release.releaseMonthAbbrev.isEmpty)
+    }
+
     // MARK: - Helper
+
+    private func makeEpisode(episodeNumber: Int, seasonEpisodeCount: Int) -> Episode {
+        Episode(
+            tmdbShowId: 1, showName: "Show", title: "Title",
+            season: 1, episodeNumber: episodeNumber,
+            durationMinutes: 45, seasonEpisodeCount: seasonEpisodeCount,
+            thumbnailURL: nil, airDate: nil, badge: nil, isWatched: false
+        )
+    }
 
     private func makeRelease(daysFromNow days: Int) -> UpcomingRelease {
         // Use noon to avoid edge cases when running near midnight

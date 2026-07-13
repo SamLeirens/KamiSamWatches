@@ -39,10 +39,8 @@ struct EpisodeDetailView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    ThumbnailImage(url: episode.thumbnailURL, fallbackIcon: "play.rectangle.fill")
-                        .frame(width: 160, height: 112)
-                        .clipShape(.rect(cornerRadius: 8))
+                VStack(alignment: .leading, spacing: 10) {
+                    ThumbnailImage(url: episode.thumbnailURL, fallbackIcon: "play.rectangle.fill", size: .stillLarge)
 
                     Text(episode.showName)
                         .font(.caption)
@@ -50,33 +48,40 @@ struct EpisodeDetailView: View {
                         .textCase(.uppercase)
 
                     Text(episode.title)
-                        .font(.title3.bold())
+                        .font(.title3)
+                        .bold()
 
                     HStack(spacing: 6) {
                         Text(episode.label)
                         if let badge = episode.badge {
-                            BadgeChip(label: badge.rawValue)
+                            BadgeChip(badge)
                         }
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                    Button {
+                        dataStore.toggleWatched(
+                            showId: episode.tmdbShowId,
+                            season: episode.season,
+                            episode: episode.episodeNumber,
+                            durationMinutes: viewModel.tmdbEpisode?.runtime ?? episode.durationMinutes
+                        )
+                    } label: {
+                        Label(
+                            isWatched ? "Watched" : "Mark Watched",
+                            systemImage: isWatched ? "checkmark.circle.fill" : "circle"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+                    .tint(isWatched ? .green : .accentColor)
                 }
                 .padding(.vertical, 4)
-
-                Button {
-                    dataStore.toggleWatched(
-                        showId: episode.tmdbShowId,
-                        season: episode.season,
-                        episode: episode.episodeNumber,
-                        durationMinutes: viewModel.tmdbEpisode?.runtime ?? episode.durationMinutes
-                    )
-                } label: {
-                    Label(
-                        isWatched ? "Watched" : "Mark Watched",
-                        systemImage: isWatched ? "checkmark.circle.fill" : "circle"
-                    )
-                    .foregroundStyle(isWatched ? .green : .primary)
-                }
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
 
             if viewModel.isLoading {
@@ -95,11 +100,13 @@ struct EpisodeDetailView: View {
                 }
 
                 Section {
-                    if let airDate = tmdbEpisode.air_date {
-                        LabeledContent("Air Date", value: airDate)
+                    if let airDate = TMDBFormat.parseDate(tmdbEpisode.air_date) {
+                        LabeledContent("Air Date", value: airDate, format: .dateTime.day().month(.wide).year())
                     }
                     if let runtime = tmdbEpisode.runtime, runtime > 0 {
-                        LabeledContent("Runtime", value: "\(runtime) min")
+                        LabeledContent("Runtime") {
+                            Text("\(runtime) min")
+                        }
                     }
                 }
             }

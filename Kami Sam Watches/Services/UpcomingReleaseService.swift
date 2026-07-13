@@ -32,7 +32,7 @@ struct LiveUpcomingReleaseService: UpcomingReleaseService {
         let show = try await tmdb.fetchShowDetail(id: showId)
         guard let next = show.next_episode_to_air,
               let dateStr = next.air_date,
-              let airDate = try? Date(dateStr, strategy: Self.dateStrategy),
+              let airDate = TMDBFormat.parseDate(dateStr),
               airDate > .now
         else { return nil }
 
@@ -59,9 +59,4 @@ struct LiveUpcomingReleaseService: UpcomingReleaseService {
         )
     }
 
-    private static let dateStrategy = Date.ParseStrategy(
-        format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
-        locale: Locale(identifier: "en_US_POSIX"),
-        timeZone: .gmt
-    )
 }

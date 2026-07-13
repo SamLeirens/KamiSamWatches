@@ -9,12 +9,10 @@ private final class ShowDetailViewModel {
     private let tmdb: any TMDBService
     let showId: Int
     let showName: String
-    let posterURL: URL?
 
-    init(show: TMDBSearchResult, tmdb: any TMDBService = TMDB.shared) {
-        self.showId = show.id
-        self.showName = show.name
-        self.posterURL = show.poster_path.flatMap { URL(string: "https://image.tmdb.org/t/p/w300\($0)") }
+    init(showId: Int, showName: String, tmdb: any TMDBService = TMDB.shared) {
+        self.showId = showId
+        self.showName = showName
         self.tmdb = tmdb
     }
 
@@ -32,64 +30,49 @@ private final class ShowDetailViewModel {
     var mainSeasons: [TMDBShowDetail.Season] {
         (detail?.seasons ?? []).filter { $0.season_number > 0 }.sorted { $0.season_number < $1.season_number }
     }
+
+    var backdropURL: URL? {
+        TMDBFormat.imageURL(path: detail?.backdrop_path, size: .w780)
+    }
+
+    var posterURL: URL? {
+        TMDBFormat.imageURL(path: detail?.poster_path)
+    }
+
+    var firstAirYear: String? {
+        detail?.firstAirYear
+    }
 }
 
 struct ShowDetailView: View {
-    let show: TMDBSearchResult
+    let showId: Int
+    let showName: String
     let dataStore: DataStore
 
     @State private var viewModel: ShowDetailViewModel
 
-    init(show: TMDBSearchResult, dataStore: DataStore) {
-        self.show = show
+    init(showId: Int, showName: String, dataStore: DataStore) {
+        self.showId = showId
+        self.showName = showName
         self.dataStore = dataStore
-        _viewModel = State(initialValue: ShowDetailViewModel(show: show))
+        _viewModel = State(initialValue: ShowDetailViewModel(showId: showId, showName: showName))
     }
 
     private var isTracking: Bool {
-        dataStore.trackedShows.contains(where: { $0.tmdbId == show.id })
+        dataStore.trackedShows.contains(where: { $0.tmdbId == showId })
     }
 
     var body: some View {
         List {
-            // Header
-            Section {
-                HStack(alignment: .top, spacing: 16) {
-                    ThumbnailImage(url: viewModel.posterURL, fallbackIcon: "tv")
-                        .frame(width: 80, height: 120)
-                        .clipShape(.rect(cornerRadius: 8))
+            ShowHeaderSection(
+                viewModel: viewModel,
+                isTracking: isTracking,
+                onToggle: toggleTracking
+            )
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(viewModel.showName)
-                            .font(.title2.bold())
-
-                        if let year = show.firstAirYear {
-                            Text(year)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Button(action: { toggleTracking() }) {
-                            Label(
-                                isTracking ? "Tracking" : "Add to My Shows",
-                                systemImage: isTracking ? "checkmark.circle.fill" : "plus.circle"
-                            )
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .tint(isTracking ? .green : .accentColor)
-                    }
-                }
-                .padding(.vertical, 4)
-
-                if let overview = viewModel.detail?.overview ?? show.overview, !overview.isEmpty {
-                    Text(overview)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            // Seasons
             if viewModel.isLoading {
                 Section {
                     HStack { Spacer(); ProgressView(); Spacer() }
@@ -103,14 +86,14 @@ struct ShowDetailView: View {
                     ForEach(viewModel.mainSeasons, id: \.season_number) { season in
                         NavigationLink {
                             SeasonDetailView(
-                                showId: show.id,
+                                showId: showId,
                                 showName: viewModel.showName,
                                 seasonNumber: season.season_number,
                                 seasonName: season.name,
                                 dataStore: dataStore
                             )
                         } label: {
-                            SeasonRow(season: season, showId: show.id, dataStore: dataStore)
+                            SeasonRow(season: season, showId: showId, dataStore: dataStore)
                         }
                     }
                 }
@@ -122,10 +105,77 @@ struct ShowDetailView: View {
     }
 
     private func toggleTracking() {
-        if let existing = dataStore.trackedShows.first(where: { $0.tmdbId == show.id }) {
+        if let existing = dataStore.trackedShows.first(where: { $0.tmdbId == showId }) {
             dataStore.removeShow(existing)
         } else {
-            dataStore.addShow(tmdbId: show.id, showName: show.name)
+            dataStore.addShow(tmdbId: showId, showName: showName)
+        }
+    }
+}
+
+// MARK: - Header
+
+private struct ShowHeaderSection: View {
+    let viewModel: ShowDetailViewModel
+    let isTracking: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .bottomLeading) {
+                ThumbnailImage(url: viewModel.backdropURL, fallbackIcon: "photo", size: .stillLarge)
+                    .overlay(alignment: .bottom) {
+                        LinearGradient(
+                            colors: [.clear, Color.black.opacity(0.85)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 80)
+                    }
+
+                ThumbnailImage(url: viewModel.posterURL, fallbackIcon: "tv", size: .posterLarge)
+                    .padding(.leading, 16)
+                    .padding(.bottom, -40)
+            }
+
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(viewModel.showName)
+                        .font(.title2)
+                        .bold()
+                        .padding(.top, 48)
+
+                    if let year = viewModel.firstAirYear {
+                        Text(year)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                Button(action: onToggle) {
+                    Label(
+                        isTracking ? "Tracking" : "Add to My Shows",
+                        systemImage: isTracking ? "checkmark.circle.fill" : "plus.circle"
+                    )
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .tint(isTracking ? .green : .accentColor)
+                .padding(.top, 44)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+
+            if let overview = viewModel.detail?.overview, !overview.isEmpty {
+                Text(overview)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+            }
         }
     }
 }
@@ -141,24 +191,34 @@ private struct SeasonRow: View {
         dataStore.watchedCount(showId: showId, season: season.season_number)
     }
 
+    private var progress: Double? {
+        dataStore.seasonProgress(showId: showId, season: season.season_number, totalEpisodes: season.episode_count)
+    }
+
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 12) {
+            ThumbnailImage(url: TMDBFormat.imageURL(path: season.poster_path), fallbackIcon: "photo", size: .poster)
+
+            VStack(alignment: .leading, spacing: 4) {
                 Text(season.name ?? "Season \(season.season_number)")
                     .font(.body)
 
                 if let total = season.episode_count {
-                    Text(watchedCount > 0 ? "\(watchedCount) / \(total) watched" : "\(total) episodes")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("\(watchedCount)/\(total)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if watchedCount >= total && watchedCount > 0 {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        }
+                    }
+                    if let p = progress {
+                        ProgressView(value: p)
+                            .tint(watchedCount >= total ? .green : .accentColor)
+                    }
                 }
-            }
-
-            Spacer()
-
-            if watchedCount > 0, let total = season.episode_count, watchedCount >= total {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
             }
         }
         .padding(.vertical, 2)

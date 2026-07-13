@@ -39,6 +39,7 @@ private struct UpcomingContent: View {
         } else {
             List(viewModel.releases) { release in
                 UpcomingReleaseRow(release: release)
+                    .cardRow()
             }
             .listStyle(.plain)
             .refreshable { await viewModel.refresh() }
@@ -52,25 +53,11 @@ private struct UpcomingReleaseRow: View {
     let release: UpcomingRelease
     @Environment(\.openURL) private var openURL
 
-    var badgeLabel: String {
-        switch release.kind {
-        case .seasonPremiere: return "Premiere"
-        case .episode: return "New"
-        }
-    }
-
-    var badgeColor: Color {
-        switch release.kind {
-        case .seasonPremiere: return .orange
-        case .episode: return .accentColor
-        }
-    }
-
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ThumbnailImage(url: release.thumbnailURL, fallbackIcon: "calendar.badge.clock")
+        HStack(alignment: .center, spacing: 12) {
+            DateBlock(release: release)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(release.showName)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -83,28 +70,58 @@ private struct UpcomingReleaseRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
+                if !release.overview.isEmpty {
+                    Text(release.overview)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
                 HStack {
-                    BadgeChip(label: badgeLabel, color: badgeColor)
+                    BadgeChip(label: release.kind.badgeLabel, color: release.kind.badgeColor)
 
                     Spacer()
-
-                    Label(release.releaseDateFormatted, systemImage: "calendar")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
 
                     Button("Notify Me") {
                         if let url = release.googleCalendarURL() {
                             openURL(url)
                         }
                     }
-                    .font(.caption)
                     .buttonStyle(.bordered)
-                    .controlSize(.mini)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.small)
                 }
-                .padding(.top, 4)
+                .padding(.top, 2)
             }
         }
+    }
+}
+
+private struct DateBlock: View {
+    let release: UpcomingRelease
+
+    private var isImminient: Bool {
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current.startOfDay(for: .now),
+            to: Calendar.current.startOfDay(for: release.releaseDate)
+        ).day ?? 0
+        return days <= 1
+    }
+
+    var body: some View {
+        VStack(spacing: 1) {
+            Text(release.releaseDayNumber)
+                .font(.title2)
+                .bold()
+                .foregroundStyle(isImminient ? Color.accentColor : Color.primary)
+            Text(release.releaseMonthAbbrev)
+                .font(.caption2)
+                .foregroundStyle(isImminient ? Color.accentColor : Color.secondary)
+        }
+        .frame(width: 44)
         .padding(.vertical, 8)
+        .background(Color.accentColor.opacity(0.1), in: .rect(cornerRadius: 10))
     }
 }
 

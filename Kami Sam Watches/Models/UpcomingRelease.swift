@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum ReleaseKind: Sendable {
     case episode(season: Int, episodeNumber: Int)
@@ -8,6 +9,20 @@ enum ReleaseKind: Sendable {
         switch self {
         case .episode(let s, let e): return "S\(s) E\(e)"
         case .seasonPremiere(let s): return "Season \(s) Premiere"
+        }
+    }
+
+    var badgeLabel: String {
+        switch self {
+        case .seasonPremiere: return "Premiere"
+        case .episode: return "New"
+        }
+    }
+
+    var badgeColor: Color {
+        switch self {
+        case .seasonPremiere: return .orange
+        case .episode: return .accentColor
         }
     }
 }
@@ -29,16 +44,19 @@ struct UpcomingRelease: Identifiable, Sendable {
     }
 
     func googleCalendarURL() -> URL? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd"
-        let startStr = formatter.string(from: releaseDate)
+        let style = Date.VerbatimFormatStyle(
+            format: "\(year: .defaultDigits)\(month: .twoDigits)\(day: .twoDigits)",
+            timeZone: .gmt,
+            calendar: Calendar(identifier: .gregorian)
+        )
+        let startStr = releaseDate.formatted(style)
         let endDate = Calendar.current.date(byAdding: .day, value: 1, to: releaseDate) ?? releaseDate
-        let endStr = formatter.string(from: endDate)
+        let endStr = endDate.formatted(style)
 
-        let title = "\(showName) – \(title)"
+        let title = "\(showName) – \(self.title)"
         let details = kind.label + (overview.isEmpty ? "" : "\n\n\(overview)")
 
-        var components = URLComponents(string: "https://calendar.google.com/calendar/render")!
+        guard var components = URLComponents(string: "https://calendar.google.com/calendar/render") else { return nil }
         components.queryItems = [
             URLQueryItem(name: "action", value: "TEMPLATE"),
             URLQueryItem(name: "text", value: title),
@@ -46,6 +64,14 @@ struct UpcomingRelease: Identifiable, Sendable {
             URLQueryItem(name: "details", value: details),
         ]
         return components.url
+    }
+
+    var releaseDayNumber: String {
+        releaseDate.formatted(.dateTime.day())
+    }
+
+    var releaseMonthAbbrev: String {
+        releaseDate.formatted(.dateTime.month(.abbreviated))
     }
 
     var releaseDateFormatted: String {
