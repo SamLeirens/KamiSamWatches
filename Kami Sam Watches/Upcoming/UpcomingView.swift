@@ -57,6 +57,8 @@ private struct UpcomingReleaseRow: View {
         HStack(alignment: .center, spacing: 12) {
             DateBlock(release: release)
 
+            ThumbnailImage(url: release.posterURL, fallbackIcon: "tv", size: .poster)
+
             VStack(alignment: .leading, spacing: 3) {
                 Text(release.showName)
                     .font(.caption)

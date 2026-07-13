@@ -96,7 +96,7 @@ final class ModelTests: XCTestCase {
         let release = UpcomingRelease(
             tmdbShowId: 1, showName: "Show", title: "Ep",
             kind: .episode(season: 1, episodeNumber: 2),
-            overview: "", releaseDate: date, thumbnailURL: nil
+            overview: "", releaseDate: date, posterURL: nil
         )
         XCTAssertEqual(release.releaseDayNumber, "14")
     }
@@ -108,7 +108,7 @@ final class ModelTests: XCTestCase {
         let release = UpcomingRelease(
             tmdbShowId: 1, showName: "Show", title: "Ep",
             kind: .episode(season: 1, episodeNumber: 2),
-            overview: "", releaseDate: date, thumbnailURL: nil
+            overview: "", releaseDate: date, posterURL: nil
         )
         XCTAssertFalse(release.releaseMonthAbbrev.isEmpty)
     }
@@ -133,7 +133,7 @@ final class ModelTests: XCTestCase {
         return UpcomingRelease(
             tmdbShowId: 1, showName: "Show", title: "Ep",
             kind: .episode(season: 1, episodeNumber: 1),
-            overview: "", releaseDate: date, thumbnailURL: nil
+            overview: "", releaseDate: date, posterURL: nil
         )
     }
 }

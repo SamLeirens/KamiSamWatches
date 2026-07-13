@@ -1,0 +1,19 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glyph" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#B5B5B5"/>
+    </linearGradient>
+  </defs>
+  <!-- transparent background: iOS supplies the tinted gradient backdrop -->
+  <circle cx="150" cy="150" r="8" fill="#D0D0D0" opacity="0.6"/>
+  <circle cx="872" cy="185" r="9" fill="#D0D0D0" opacity="0.55"/>
+  <circle cx="922" cy="330" r="6" fill="#D0D0D0" opacity="0.35"/>
+  <circle cx="108" cy="335" r="7" fill="#D0D0D0" opacity="0.4"/>
+  <circle cx="512" cy="450" r="250" fill="#FFFFFF" opacity="0.22"/>
+  <path d="M 165 400 Q 512 308 859 400" fill="none" stroke="url(#glyph)" stroke-width="68" stroke-linecap="round"/>
+  <line x1="512" y1="360" x2="512" y2="500" stroke="#E0E0E0" stroke-width="36"/>
+  <rect x="248" y="492" width="528" height="46" rx="23" fill="#E0E0E0"/>
+  <line x1="330" y1="428" x2="306" y2="872" stroke="url(#glyph)" stroke-width="62" stroke-linecap="round"/>
+  <line x1="694" y1="428" x2="718" y2="872" stroke="url(#glyph)" stroke-width="62" stroke-linecap="round"/>
+</svg>

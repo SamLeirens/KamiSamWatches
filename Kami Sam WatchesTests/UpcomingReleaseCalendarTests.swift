@@ -18,7 +18,7 @@ final class UpcomingReleaseCalendarTests: XCTestCase {
             kind: kind,
             overview: overview,
             releaseDate: date,
-            thumbnailURL: nil
+            posterURL: nil
         )
     }
 

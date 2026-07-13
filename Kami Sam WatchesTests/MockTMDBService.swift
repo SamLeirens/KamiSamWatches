@@ -81,12 +81,12 @@ extension TMDBShowDetail {
 }
 
 extension TMDBShowDetail.Season {
-    static func fixture(number: Int = 1, episodeCount: Int = 6) -> TMDBShowDetail.Season {
+    static func fixture(number: Int = 1, episodeCount: Int = 6, posterPath: String? = nil) -> TMDBShowDetail.Season {
         TMDBShowDetail.Season(
             season_number: number,
             name: "Season \(number)",
             episode_count: episodeCount,
-            poster_path: nil,
+            poster_path: posterPath,
             overview: nil
         )
     }

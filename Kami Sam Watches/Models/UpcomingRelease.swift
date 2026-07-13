@@ -34,7 +34,7 @@ struct UpcomingRelease: Identifiable, Sendable {
     let kind: ReleaseKind
     let overview: String
     let releaseDate: Date
-    let thumbnailURL: URL?
+    let posterURL: URL?
 
     var id: String {
         switch kind {

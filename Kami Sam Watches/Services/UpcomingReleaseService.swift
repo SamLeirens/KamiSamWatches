@@ -36,13 +36,9 @@ struct LiveUpcomingReleaseService: UpcomingReleaseService {
               airDate > .now
         else { return nil }
 
-        let imageURL: URL?
-        if let stillPath = next.still_path {
-            imageURL = tmdb.imageURL(stillPath: stillPath)
-        } else {
-            let poster = show.seasons.first(where: { $0.season_number == next.season_number })?.poster_path
-            imageURL = tmdb.imageURL(stillPath: poster)
-        }
+        let posterPath = show.poster_path
+            ?? show.seasons.first(where: { $0.season_number == next.season_number })?.poster_path
+        let posterURL = tmdb.imageURL(stillPath: posterPath)
 
         let kind: ReleaseKind = next.episode_number == 1
             ? .seasonPremiere(season: next.season_number)
@@ -55,7 +51,7 @@ struct LiveUpcomingReleaseService: UpcomingReleaseService {
             kind: kind,
             overview: next.overview ?? "",
             releaseDate: airDate,
-            thumbnailURL: imageURL
+            posterURL: posterURL
         )
     }
 

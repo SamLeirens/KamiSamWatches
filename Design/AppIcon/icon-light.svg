@@ -1,0 +1,31 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#251E42"/>
+      <stop offset="0.55" stop-color="#4B39D4"/>
+      <stop offset="1" stop-color="#6C5BE8"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+  <!-- stars -->
+  <circle cx="150" cy="150" r="8" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="260" cy="245" r="6" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="760" cy="120" r="6" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="872" cy="185" r="9" fill="#FFFFFF" opacity="0.65"/>
+  <circle cx="922" cy="330" r="6" fill="#FFFFFF" opacity="0.45"/>
+  <circle cx="108" cy="335" r="7" fill="#FFFFFF" opacity="0.5"/>
+  <!-- moon: soft halo + disc -->
+  <circle cx="512" cy="450" r="340" fill="url(#halo)"/>
+  <circle cx="512" cy="450" r="250" fill="#FFFFFF" opacity="0.32"/>
+  <!-- torii: kasagi (curved top), gakuzuka (center strut), nuki (tie beam), pillars -->
+  <path d="M 165 400 Q 512 308 859 400" fill="none" stroke="#FFFFFF" stroke-width="68" stroke-linecap="round"/>
+  <line x1="512" y1="360" x2="512" y2="500" stroke="#FFFFFF" stroke-width="36"/>
+  <rect x="248" y="492" width="528" height="46" rx="23" fill="#FFFFFF"/>
+  <line x1="330" y1="428" x2="306" y2="872" stroke="#FFFFFF" stroke-width="62" stroke-linecap="round"/>
+  <line x1="694" y1="428" x2="718" y2="872" stroke="#FFFFFF" stroke-width="62" stroke-linecap="round"/>
+</svg>

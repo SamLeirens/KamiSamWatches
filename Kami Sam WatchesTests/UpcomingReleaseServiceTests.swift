@@ -91,6 +91,38 @@ final class UpcomingReleaseServiceTests: XCTestCase {
         XCTAssertEqual(results.map { $0.showName }, ["Soon", "Later"])
     }
 
+    // MARK: - Poster resolution
+
+    func testPosterURLUsesShowPoster() async throws {
+        let nextEp = TMDBEpisode.fixture(number: 2, season: 1, airDate: dateString(daysFromNow: 3))
+        var mock = MockTMDBService()
+        mock.showDetails[1] = .fixture(
+            id: 1,
+            seasons: [.fixture(number: 1, posterPath: "/season.jpg")],
+            nextEpisode: nextEp,
+            posterPath: "/show.jpg"
+        )
+
+        let service = LiveUpcomingReleaseService(tmdb: mock)
+        let results = try await service.fetchUpcomingReleases(showIds: [1])
+        XCTAssertEqual(results[0].posterURL, TMDBFormat.imageURL(path: "/show.jpg"))
+    }
+
+    func testPosterURLFallsBackToSeasonPoster() async throws {
+        let nextEp = TMDBEpisode.fixture(number: 2, season: 1, airDate: dateString(daysFromNow: 3))
+        var mock = MockTMDBService()
+        mock.showDetails[1] = .fixture(
+            id: 1,
+            seasons: [.fixture(number: 1, posterPath: "/season.jpg")],
+            nextEpisode: nextEp,
+            posterPath: nil
+        )
+
+        let service = LiveUpcomingReleaseService(tmdb: mock)
+        let results = try await service.fetchUpcomingReleases(showIds: [1])
+        XCTAssertEqual(results[0].posterURL, TMDBFormat.imageURL(path: "/season.jpg"))
+    }
+
     // MARK: - Helpers
 
     private func dateString(daysFromNow days: Int) -> String {
