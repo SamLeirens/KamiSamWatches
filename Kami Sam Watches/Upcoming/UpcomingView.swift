@@ -2,15 +2,18 @@ import SwiftUI
 import SwiftData
 
 struct UpcomingView: View {
+    let dataStore: DataStore
+
     @State private var viewModel: UpcomingViewModel
 
     init(dataStore: DataStore) {
+        self.dataStore = dataStore
         _viewModel = State(initialValue: UpcomingViewModel(dataStore: dataStore))
     }
 
     var body: some View {
         NavigationStack {
-            UpcomingContent(viewModel: viewModel)
+            UpcomingContent(viewModel: viewModel, dataStore: dataStore)
                 .navigationTitle("Upcoming")
         }
         .task { await viewModel.load() }
@@ -19,6 +22,7 @@ struct UpcomingView: View {
 
 private struct UpcomingContent: View {
     let viewModel: UpcomingViewModel
+    let dataStore: DataStore
 
     var body: some View {
         if viewModel.isLoading {
@@ -38,8 +42,17 @@ private struct UpcomingContent: View {
             )
         } else {
             List(viewModel.releases) { release in
-                UpcomingReleaseRow(release: release)
-                    .cardRow()
+                ZStack {
+                    NavigationLink {
+                        EpisodeDetailView(episode: release.asEpisode, dataStore: dataStore)
+                    } label: {
+                        EmptyView()
+                    }
+                    .opacity(0)
+
+                    UpcomingReleaseRow(release: release)
+                }
+                .cardRow()
             }
             .listStyle(.plain)
             .refreshable { await viewModel.refresh() }

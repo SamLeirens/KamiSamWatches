@@ -66,6 +66,36 @@ struct UpcomingRelease: Identifiable, Sendable {
         return components.url
     }
 
+    var season: Int {
+        switch kind {
+        case .episode(let s, _): return s
+        case .seasonPremiere(let s): return s
+        }
+    }
+
+    var episodeNumber: Int {
+        switch kind {
+        case .episode(_, let e): return e
+        case .seasonPremiere: return 1
+        }
+    }
+
+    var asEpisode: Episode {
+        Episode(
+            tmdbShowId: tmdbShowId,
+            showName: showName,
+            title: title,
+            season: season,
+            episodeNumber: episodeNumber,
+            durationMinutes: 0,
+            seasonEpisodeCount: 0,
+            thumbnailURL: nil,
+            airDate: releaseDate,
+            badge: nil,
+            isWatched: false
+        )
+    }
+
     var releaseDayNumber: String {
         releaseDate.formatted(.dateTime.day())
     }
