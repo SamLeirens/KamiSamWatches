@@ -18,6 +18,9 @@ struct ContentView: View {
                     Tab("Search", systemImage: "magnifyingglass") {
                         SearchView(dataStore: dataStore)
                     }
+                    Tab("For You", systemImage: "sparkles") {
+                        ForYouView(dataStore: dataStore)
+                    }
                     Tab("Stats", systemImage: "chart.bar.fill") {
                         StatsView(dataStore: dataStore)
                     }

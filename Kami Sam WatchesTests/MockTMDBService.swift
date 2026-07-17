@@ -7,6 +7,7 @@ struct MockTMDBService: TMDBService {
     var seasonDetails: [String: TMDBSeasonDetail] = [:]
     var searchResults: [TMDBSearchResult] = []
     var findResults: [Int: TMDBSearchResult] = [:]
+    var recommendations: [Int: [TMDBRecommendedShow]] = [:]
 
     func fetchShowDetail(id: Int) async throws -> TMDBShowDetail {
         guard let detail = showDetails[id] else {
@@ -29,6 +30,13 @@ struct MockTMDBService: TMDBService {
 
     func findShow(tvdbId: Int) async throws -> TMDBSearchResult? {
         findResults[tvdbId]
+    }
+
+    func fetchRecommendations(showId: Int) async throws -> [TMDBRecommendedShow] {
+        guard let recs = recommendations[showId] else {
+            throw URLError(.badServerResponse)
+        }
+        return recs
     }
 }
 
@@ -64,7 +72,8 @@ extension TMDBShowDetail {
         lastEpisode: TMDBEpisode? = nil,
         backdropPath: String? = nil,
         posterPath: String? = nil,
-        firstAirDate: String? = nil
+        firstAirDate: String? = nil,
+        genres: [TMDBGenre]? = nil
     ) -> TMDBShowDetail {
         TMDBShowDetail(
             id: id,
@@ -73,6 +82,7 @@ extension TMDBShowDetail {
             backdrop_path: backdropPath,
             poster_path: posterPath,
             first_air_date: firstAirDate,
+            genres: genres,
             seasons: seasons,
             next_episode_to_air: nextEpisode,
             last_episode_to_air: lastEpisode
@@ -95,5 +105,26 @@ extension TMDBShowDetail.Season {
 extension TMDBSeasonDetail {
     static func fixture(episodes: [TMDBEpisode]) -> TMDBSeasonDetail {
         TMDBSeasonDetail(poster_path: nil, episodes: episodes)
+    }
+}
+
+extension TMDBRecommendedShow {
+    static func fixture(
+        id: Int,
+        name: String? = nil,
+        vote: Double? = nil,
+        genreIds: [Int]? = nil,
+        posterPath: String? = nil,
+        firstAirDate: String? = nil
+    ) -> TMDBRecommendedShow {
+        TMDBRecommendedShow(
+            id: id,
+            name: name ?? "Show \(id)",
+            overview: nil,
+            first_air_date: firstAirDate,
+            poster_path: posterPath,
+            vote_average: vote,
+            genre_ids: genreIds
+        )
     }
 }

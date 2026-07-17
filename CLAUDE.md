@@ -59,7 +59,7 @@ MVVM + service protocols, all state flowing through one `@Observable` store:
 ```
 SwiftData (@Model: TrackedShow, WatchEvent)
         │
-    DataStore (@Observable, owns ModelContext, seeds 5 default shows on first run)
+    DataStore (@Observable, owns ModelContext)
         │  created once in ContentView, passed by reference into each tab
         ▼
 Feature ViewModels (@Observable) ──▶ Service protocols ──▶ LiveTMDBService ──▶ TMDB REST API
@@ -82,6 +82,7 @@ Feature Views (one folder per tab)
 | **Watch Next** | `WatchNext/` | For each tracked (non-hidden) show, shows the next unwatched episode. `LiveEpisodeService.resolveNextEpisode` takes last progress, tries episode+1 in the same season, then falls to the next season's E1. Badges: `.premiere` (E1), `.latest` (matches `last_episode_to_air`), `.new` (aired ≤14 days ago). Filter chips All/New/Premieres are driven by `WatchNextFilter` (logic in `WatchNextViewModel.filteredEpisodes`). Row actions: Mark Watched, swipe-to-hide show. Season progress bar derived from `Episode.seasonProgress`. |
 | **Upcoming** | `Upcoming/` | Future releases for all tracked shows, from TMDB `next_episode_to_air`, sorted by date. `ReleaseKind` distinguishes season premieres from regular episodes; rows show the show poster (`UpcomingRelease.posterURL`, from `poster_path` falling back to the season poster) next to a date block with day number + month abbreviation (`UpcomingRelease.releaseDayNumber`/`releaseMonthAbbrev`); relative date labels ("Today", "Tomorrow", "in N days"). |
 | **Search** | `Search/` | TMDB TV search with 350 ms debounce (`SearchViewModel.search`). Portrait poster thumbnails (`.poster` size). Rows track/untrack shows; tapping opens `ShowDetailView` (backdrop hero header, poster, overview, season list with `ProgressView` per season via `DataStore.seasonProgress`) → `SeasonDetailView` (episode list with episode still thumbnails, overview, toggle-watched). `ShowDetailViewModel` is private inside `ShowDetailView.swift`. |
+| **For You** | `ForYou/` | Show recommendations. Two-stage screen (`ForYouViewModel.Stage`): pick 3–5 seed shows (tracked shows listed as selectable rows, plus TMDB search to add any show as a seed), then a ranked results list. `LiveRecommendationService` (`Services/RecommendationService.swift`) fans out `fetchRecommendations` + `fetchShowDetail` (for seed genres) per seed, merges by show id, drops tracked/seed shows, and ranks by #recommending-seeds → TMDB list position → `vote_average`, capped at 20. Each `ShowRecommendation` (`Models/ShowRecommendation.swift`) carries `sourceShowNames`/`sharedGenres` for the "Because you watch X and Y" reason line. Rows have Track buttons and push `ShowDetailView`. |
 | **Stats** | `Stats/` | `StatsViewModel` (owned by `StatsView`) computes `watchTimeLabel` (mo/d/h/m) and `monthlyActivity` ([MonthlyActivity]) for a 12-month zero-filled bar chart. 2×2 metric tile grid + Swift Charts `BarMark` activity chart + watch-event history list. Toolbar menu hosts **Import from TV Time**: `.fileImporter` for a ZIP → `TVTimeImporter`. |
 
 **TV Time import** (`Services/TVTimeImporter.swift`): unzips the export (ZIPFoundation), finds `tracking-prod-records-v2.csv`, parses it with the in-file RFC 4180 `CSVParser`, keeps `watch-episode`/`rewatch-episode` rows, resolves each TVDB show id to TMDB (`findShow(tvdbId:)`, falling back to name search), then bulk-inserts via `DataStore.importData` which skips episodes already recorded. Progress is reported through a `Phase` callback rendered as an overlay in Stats.
@@ -90,7 +91,7 @@ Feature Views (one folder per tab)
 
 Unit tests only (XCTest) in `Kami Sam WatchesTests/`:
 - `MockTMDBService.swift` — configurable mock used by all service tests; extend it rather than creating new mocks.
-- `DataStoreTests` use an in-memory `ModelContainer` (`ModelConfiguration(isStoredInMemoryOnly: true)`); note `DataStore.init` seeds 5 default shows when the store is empty — tests must account for that.
+- `DataStoreTests` use an in-memory `ModelContainer` (`ModelConfiguration(isStoredInMemoryOnly: true)`).
 - Coverage exists for models, `EpisodeService` next-episode resolution, `UpcomingReleaseService`, `TVTimeImporter`/CSV parsing, `DataStore` mutations/import dedup/`seasonProgress`, `WatchNextViewModelTests` (filter logic), and `StatsViewModelTests` (monthly bucketing, `watchTimeLabel`).
 
 New logic goes in ViewModels or Services so it is testable; add tests alongside in the same style.
