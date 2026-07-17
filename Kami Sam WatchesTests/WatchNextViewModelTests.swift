@@ -13,7 +13,6 @@ final class WatchNextViewModelTests: XCTestCase {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         store = Kami_Sam_Watches.DataStore(modelContext: container.mainContext)
-        for show in store.trackedShows { store.removeShow(show) }
     }
 
     override func tearDown() async throws {

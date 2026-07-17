@@ -12,6 +12,11 @@ struct TMDBEpisode: Decodable, Sendable {
     let runtime: Int?
 }
 
+struct TMDBGenre: Decodable, Sendable {
+    let id: Int
+    let name: String
+}
+
 struct TMDBShowDetail: Decodable, Sendable {
     struct Season: Decodable, Sendable {
         let season_number: Int
@@ -26,6 +31,7 @@ struct TMDBShowDetail: Decodable, Sendable {
     let backdrop_path: String?
     let poster_path: String?
     let first_air_date: String?
+    let genres: [TMDBGenre]?
     let seasons: [Season]
     let next_episode_to_air: TMDBEpisode?
     let last_episode_to_air: TMDBEpisode?
@@ -53,6 +59,20 @@ struct TMDBSearchResult: Decodable, Sendable, Identifiable, Hashable {
     }
 }
 
+struct TMDBRecommendedShow: Decodable, Sendable {
+    let id: Int
+    let name: String
+    let overview: String?
+    let first_air_date: String?
+    let poster_path: String?
+    let vote_average: Double?
+    let genre_ids: [Int]?
+
+    var firstAirYear: String? {
+        first_air_date.flatMap { $0.split(separator: "-").first.map(String.init) }
+    }
+}
+
 // MARK: - Protocol
 
 protocol TMDBService: Sendable {
@@ -60,6 +80,7 @@ protocol TMDBService: Sendable {
     func fetchSeasonDetail(showId: Int, season: Int) async throws -> TMDBSeasonDetail
     func searchShows(query: String) async throws -> [TMDBSearchResult]
     func findShow(tvdbId: Int) async throws -> TMDBSearchResult?
+    func fetchRecommendations(showId: Int) async throws -> [TMDBRecommendedShow]
 }
 
 extension TMDBService {
@@ -95,6 +116,12 @@ struct LiveTMDBService: TMDBService {
         let url = components.url!
         struct Response: Decodable { let tv_results: [TMDBSearchResult] }
         return try JSONDecoder().decode(Response.self, from: try await fetch(url)).tv_results.first
+    }
+
+    func fetchRecommendations(showId: Int) async throws -> [TMDBRecommendedShow] {
+        let url = URL(string: "https://api.themoviedb.org/3/tv/\(showId)/recommendations")!
+        struct Response: Decodable { let results: [TMDBRecommendedShow] }
+        return try JSONDecoder().decode(Response.self, from: try await fetch(url)).results
     }
 
     private func fetch(_ url: URL) async throws -> Data {

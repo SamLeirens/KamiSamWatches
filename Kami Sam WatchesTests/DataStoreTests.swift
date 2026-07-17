@@ -13,9 +13,6 @@ final class DataStoreTests: XCTestCase {
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         store = Kami_Sam_Watches.DataStore(modelContext: container.mainContext)
-        // Remove seed shows so each test starts clean
-        let seeds = store.trackedShows
-        for show in seeds { store.removeShow(show) }
     }
 
     override func tearDown() async throws {

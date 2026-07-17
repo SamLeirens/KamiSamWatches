@@ -32,7 +32,7 @@ Add a `Tab("Name", systemImage: "sf.symbol") { FeatureView(dataStore: dataStore)
 
 ## Finish
 
-1. Add XCTest unit tests in `Kami Sam WatchesTests/` for any new service/ViewModel logic, injecting `MockTMDBService` (extend it if needed rather than writing a new mock). Remember `@testable import Kami_Sam_Watches` and that `DataStore` seeds 5 default shows into an empty store.
+1. Add XCTest unit tests in `Kami Sam WatchesTests/` for any new service/ViewModel logic, injecting `MockTMDBService` (extend it if needed rather than writing a new mock). Remember `@testable import Kami_Sam_Watches`.
 2. Build and test with the `xcodebuild` commands in `CLAUDE.md` (needs the `DEVELOPER_DIR` prefix).
 3. Verify the code follows `AGENTS.md` (or run the `swift-reviewer` agent on the diff).
 4. **Update the Feature Map in `CLAUDE.md`** with the new feature.

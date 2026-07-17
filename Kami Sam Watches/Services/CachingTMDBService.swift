@@ -8,6 +8,7 @@ struct CachingTMDBService: TMDBService {
         static let showDetail: TimeInterval = 30 * 60
         static let seasonDetail: TimeInterval = 24 * 3600
         static let findShow: TimeInterval = 24 * 3600
+        static let recommendations: TimeInterval = 30 * 60
     }
 
     init(base: any TMDBService, cache: TMDBCache) {
@@ -40,6 +41,14 @@ struct CachingTMDBService: TMDBService {
         if let cached: TMDBSearchResult = await cache.get(key: key) { return cached }
         guard let value = try await base.findShow(tvdbId: tvdbId) else { return nil }
         await cache.set(value, key: key, ttl: TTL.findShow)
+        return value
+    }
+
+    func fetchRecommendations(showId: Int) async throws -> [TMDBRecommendedShow] {
+        let key = "recommendations-\(showId)"
+        if let cached: [TMDBRecommendedShow] = await cache.get(key: key) { return cached }
+        let value = try await base.fetchRecommendations(showId: showId)
+        await cache.set(value, key: key, ttl: TTL.recommendations)
         return value
     }
 }
