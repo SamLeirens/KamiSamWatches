@@ -14,7 +14,7 @@ struct WatchNextView: View {
     var body: some View {
         NavigationStack {
             WatchNextContent(viewModel: viewModel, dataStore: dataStore)
-                .navigationTitle("Watch Next")
+                .toolbar(.hidden, for: .navigationBar)
         }
         .task { await viewModel.load() }
     }
