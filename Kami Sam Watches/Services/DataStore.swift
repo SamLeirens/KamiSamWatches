@@ -37,7 +37,6 @@ final class DataStore {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        seedDefaultShowsIfNeeded()
         refresh()
     }
 
@@ -214,21 +213,5 @@ final class DataStore {
 
     private func save() {
         try? modelContext.save()
-    }
-
-    private func seedDefaultShowsIfNeeded() {
-        let existing = (try? modelContext.fetch(FetchDescriptor<TrackedShow>()))?.count ?? 0
-        guard existing == 0 else { return }
-        let seeds: [(Int, String)] = [
-            (95396,  "Severance"),
-            (136315, "The Bear"),
-            (97546,  "Slow Horses"),
-            (126308, "Shōgun"),
-            (110316, "The White Lotus"),
-        ]
-        for (id, name) in seeds {
-            modelContext.insert(TrackedShow(tmdbId: id, showName: name))
-        }
-        save()
     }
 }
