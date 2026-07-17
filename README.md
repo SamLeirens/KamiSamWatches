@@ -2,6 +2,8 @@
 
 A personal TV-show tracker for iPhone and iPad, built with SwiftUI.
 
+📄 **Sales pitch:** [one-page A4](Design/Pitch/Kami-Sam-Watches-Sales-Pitch-A4.pdf) · [full-length](Design/Pitch/Kami-Sam-Watches-Sales-Pitch.pdf)
+
 ## What it does
 
 - **Watch Next** — shows the next unwatched episode for each show you follow, with badges for premieres, latest episodes, and new releases
