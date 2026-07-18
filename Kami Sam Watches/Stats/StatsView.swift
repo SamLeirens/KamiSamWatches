@@ -10,6 +10,11 @@ struct StatsView: View {
     @State private var importPhase: TVTimeImporter.Phase?
     @State private var importSummary: TVTimeImporter.Summary?
     @State private var importError: String?
+    @State private var showsBackupExporter = false
+    @State private var showsBackupImporter = false
+    @State private var backupDocument: BackupDocument?
+    @State private var restoreResult: DataStore.ImportResult?
+    @State private var backupError: String?
 
     init(dataStore: DataStore) {
         self.dataStore = dataStore
@@ -55,6 +60,20 @@ struct StatsView: View {
                         } label: {
                             Label("Import from TV Time", systemImage: "square.and.arrow.down")
                         }
+
+                        Divider()
+
+                        Button {
+                            startExport()
+                        } label: {
+                            Label("Export Backup", systemImage: "square.and.arrow.up")
+                        }
+
+                        Button {
+                            showsBackupImporter = true
+                        } label: {
+                            Label("Import Backup", systemImage: "square.and.arrow.down.on.square")
+                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -67,6 +86,24 @@ struct StatsView: View {
                     startImport(from: url)
                 case .failure(let error):
                     importError = error.localizedDescription
+                }
+            }
+            .fileExporter(
+                isPresented: $showsBackupExporter,
+                document: backupDocument,
+                contentType: .json,
+                defaultFilename: BackupService.defaultFilename()
+            ) { result in
+                if case .failure(let error) = result {
+                    backupError = error.localizedDescription
+                }
+            }
+            .fileImporter(isPresented: $showsBackupImporter, allowedContentTypes: [.json]) { result in
+                switch result {
+                case .success(let url):
+                    restoreBackup(from: url)
+                case .failure(let error):
+                    backupError = error.localizedDescription
                 }
             }
             .overlay {
@@ -91,6 +128,23 @@ struct StatsView: View {
             } message: {
                 Text(importError ?? "")
             }
+            .alert(
+                String(localized: "Restore Complete"),
+                isPresented: Binding(get: { restoreResult != nil }, set: { if !$0 { restoreResult = nil } }),
+                presenting: restoreResult
+            ) { _ in
+                Button(String(localized: "OK"), role: .cancel) {}
+            } message: { result in
+                Text(viewModel.restoreSummaryMessage(result))
+            }
+            .alert(
+                String(localized: "Backup Failed"),
+                isPresented: Binding(get: { backupError != nil }, set: { if !$0 { backupError = nil } })
+            ) {
+                Button(String(localized: "OK"), role: .cancel) {}
+            } message: {
+                Text(backupError ?? "")
+            }
         }
     }
 
@@ -108,6 +162,28 @@ struct StatsView: View {
             } catch {
                 importError = error.localizedDescription
             }
+        }
+    }
+
+    private func startExport() {
+        do {
+            let data = try BackupService().export(shows: dataStore.trackedShows, events: dataStore.watchEvents)
+            backupDocument = BackupDocument(data: data)
+            showsBackupExporter = true
+        } catch {
+            backupError = error.localizedDescription
+        }
+    }
+
+    private func restoreBackup(from url: URL) {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let data = try Data(contentsOf: url)
+            let file = try BackupService().decode(data)
+            restoreResult = dataStore.restore(shows: file.shows, events: file.events)
+        } catch {
+            backupError = error.localizedDescription
         }
     }
 

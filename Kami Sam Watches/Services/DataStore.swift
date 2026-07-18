@@ -149,6 +149,55 @@ final class DataStore {
         return result
     }
 
+    /// Restores a backup file, merging into the current store. Unlike `importData`,
+    /// this preserves show metadata (`addedAt`, `hiddenFromWatchNext`) and dedups
+    /// events on show/season/episode *and* timestamp so rewatch history survives.
+    /// Timestamps are compared at whole-second precision because ISO8601 encoding
+    /// drops sub-second precision.
+    func restore(shows: [BackupShow], events: [BackupWatchEvent]) -> ImportResult {
+        var result = ImportResult()
+
+        var trackedIds = Set(trackedShows.map(\.tmdbId))
+        for show in shows where !trackedIds.contains(show.tmdbId) {
+            modelContext.insert(TrackedShow(
+                tmdbId: show.tmdbId,
+                showName: show.showName,
+                addedAt: show.addedAt,
+                hiddenFromWatchNext: show.hiddenFromWatchNext
+            ))
+            trackedIds.insert(show.tmdbId)
+            result.showsAdded += 1
+        }
+
+        func eventKey(showId: Int, season: Int, episode: Int, watchedAt: Date) -> String {
+            "\(showId)-\(season)-\(episode)-\(Int(watchedAt.timeIntervalSince1970))"
+        }
+
+        var existingKeys = Set(watchEvents.map {
+            eventKey(showId: $0.tmdbShowId, season: $0.season, episode: $0.episodeNumber, watchedAt: $0.watchedAt)
+        })
+        for event in events {
+            let key = eventKey(showId: event.tmdbShowId, season: event.season, episode: event.episodeNumber, watchedAt: event.watchedAt)
+            if existingKeys.contains(key) {
+                result.duplicatesSkipped += 1
+                continue
+            }
+            existingKeys.insert(key)
+            modelContext.insert(WatchEvent(
+                tmdbShowId: event.tmdbShowId,
+                season: event.season,
+                episodeNumber: event.episodeNumber,
+                durationMinutes: event.durationMinutes,
+                watchedAt: event.watchedAt
+            ))
+            result.episodesImported += 1
+        }
+
+        save()
+        refresh()
+        return result
+    }
+
     func setHidden(tmdbId: Int, hidden: Bool) {
         guard let show = trackedShows.first(where: { $0.tmdbId == tmdbId }) else { return }
         show.hiddenFromWatchNext = hidden

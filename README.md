@@ -10,6 +10,7 @@ A personal TV-show tracker for iPhone and iPad, built with SwiftUI.
 - **Upcoming** — lists future air dates for your tracked shows, sorted by date
 - **Search** — find any TV show via TMDB and add it to your list; drill into seasons and episodes to mark things watched
 - **Stats** — watch time, episode counts, and full history; import your watch history from a TV Time export ZIP
+- **Backup** — export/import all tracked shows and watch history as a JSON file (Stats toolbar), for phone migration
 
 ## Requirements
 
