@@ -56,6 +56,16 @@ final class StatsViewModel {
         return lines.joined(separator: "\n")
     }
 
+    func restoreSummaryMessage(_ result: DataStore.ImportResult) -> String {
+        var lines = [
+            String(localized: "\(result.episodesImported) episodes restored across \(result.showsAdded) new shows.")
+        ]
+        if result.duplicatesSkipped > 0 {
+            lines.append(String(localized: "\(result.duplicatesSkipped) duplicates skipped."))
+        }
+        return lines.joined(separator: "\n")
+    }
+
     // MARK: Private
 
     private func monthStartsForLastYear(cal: Calendar) -> [Date] {

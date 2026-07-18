@@ -3,11 +3,12 @@ import SwiftData
 
 @Model
 final class WatchEvent {
-    var tmdbShowId: Int
-    var season: Int
-    var episodeNumber: Int
-    var durationMinutes: Int
-    var watchedAt: Date
+    // All properties have defaults so the schema stays CloudKit-compatible.
+    var tmdbShowId: Int = 0
+    var season: Int = 0
+    var episodeNumber: Int = 0
+    var durationMinutes: Int = 0
+    var watchedAt: Date = Date.now
 
     init(tmdbShowId: Int, season: Int, episodeNumber: Int, durationMinutes: Int, watchedAt: Date = .now) {
         self.tmdbShowId = tmdbShowId
