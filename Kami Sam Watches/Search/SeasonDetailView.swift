@@ -98,17 +98,17 @@ private struct SeasonDetailContent: View {
 
                 Section("\(watchedCount) of \(viewModel.episodes.count) watched") {
                     ForEach(viewModel.episodes, id: \.episode_number) { ep in
-                        EpisodeToggleRow(
-                            episode: ep,
-                            isWatched: dataStore.isWatched(showId: showId, season: seasonNumber, episode: ep.episode_number)
-                        ) {
-                            dataStore.toggleWatched(
+                        EpisodeRow(
+                            episode: Episode(
+                                tmdb: ep,
                                 showId: showId,
-                                season: seasonNumber,
-                                episode: ep.episode_number,
-                                durationMinutes: ep.runtime ?? 0
-                            )
-                        }
+                                showName: showName,
+                                seasonEpisodeCount: viewModel.episodes.count,
+                                isWatched: dataStore.isWatched(showId: showId, season: seasonNumber, episode: ep.episode_number)
+                            ),
+                            overview: ep.overview,
+                            dataStore: dataStore
+                        )
                     }
                 }
             } else if viewModel.isLoading {
@@ -122,67 +122,95 @@ private struct SeasonDetailContent: View {
 
 // MARK: - Episode row
 
-private struct EpisodeToggleRow: View {
-    let episode: TMDBEpisode
-    let isWatched: Bool
-    let onToggle: () -> Void
-
-    private var airDate: Date? {
-        TMDBFormat.parseDate(episode.air_date)
-    }
+/// Tapping the row opens the episode; the trailing button toggles watched state.
+private struct EpisodeRow: View {
+    let episode: Episode
+    let overview: String?
+    let dataStore: DataStore
 
     var body: some View {
-        Button(action: onToggle) {
-            HStack(spacing: 12) {
-                ThumbnailImage(
-                    url: TMDBFormat.imageURL(path: episode.still_path),
-                    fallbackIcon: "play.rectangle",
-                    size: .still
-                )
-                .overlay(alignment: .topLeading) {
-                    if isWatched {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .background(.black.opacity(0.5), in: Circle())
-                            .padding(4)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text("E\(episode.episode_number)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(episode.name)
-                            .font(.body)
-                            .foregroundStyle(isWatched ? .secondary : .primary)
-                    }
-
-                    if let overview = episode.overview, !overview.isEmpty {
-                        Text(overview)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-
-                    HStack(spacing: 6) {
-                        if let date = airDate {
-                            Text(date, format: .dateTime.day().month(.abbreviated).year())
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        if let runtime = episode.runtime, runtime > 0 {
-                            Text("· \(runtime) min")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                }
-
-                Spacer()
+        HStack(spacing: 12) {
+            NavigationLink {
+                EpisodeDetailView(episode: episode, dataStore: dataStore, showsSeasonLink: false)
+            } label: {
+                EpisodeRowLabel(episode: episode, overview: overview)
             }
-            .contentShape(Rectangle())
+
+            Button(action: toggleWatched) {
+                Label(
+                    episode.isWatched ? "Mark unwatched" : "Mark watched",
+                    systemImage: episode.isWatched ? "checkmark.circle.fill" : "circle"
+                )
+                .labelStyle(.iconOnly)
+                .font(.title2)
+                .foregroundStyle(episode.isWatched ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .swipeActions(edge: .leading) {
+            Button(
+                episode.isWatched ? "Unwatched" : "Watched",
+                systemImage: episode.isWatched ? "circle" : "checkmark.circle.fill",
+                action: toggleWatched
+            )
+            .tint(episode.isWatched ? .gray : .green)
+        }
+    }
+
+    private func toggleWatched() {
+        dataStore.toggleWatched(
+            showId: episode.tmdbShowId,
+            season: episode.season,
+            episode: episode.episodeNumber,
+            durationMinutes: episode.durationMinutes
+        )
+    }
+}
+
+private struct EpisodeRowLabel: View {
+    let episode: Episode
+    let overview: String?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ThumbnailImage(
+                url: episode.thumbnailURL,
+                fallbackIcon: "play.rectangle",
+                size: .still
+            )
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text("E\(episode.episodeNumber)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(episode.title)
+                        .font(.body)
+                        .foregroundStyle(episode.isWatched ? .secondary : .primary)
+                }
+
+                if let overview, !overview.isEmpty {
+                    Text(overview)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                HStack(spacing: 6) {
+                    if let date = episode.airDate {
+                        Text(date, format: .dateTime.day().month(.abbreviated).year())
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    if episode.durationMinutes > 0 {
+                        Text("· \(episode.durationMinutes) min")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+
+            Spacer()
+        }
     }
 }
