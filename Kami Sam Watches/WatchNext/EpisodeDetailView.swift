@@ -1,6 +1,5 @@
 import SwiftUI
 
-@MainActor
 @Observable
 private final class EpisodeDetailViewModel {
     var tmdbEpisode: TMDBEpisode?
@@ -29,6 +28,8 @@ private final class EpisodeDetailViewModel {
 struct EpisodeDetailView: View {
     let episode: Episode
     let dataStore: DataStore
+    /// Hidden when this view was pushed from the season list itself, to avoid navigating in a circle.
+    var showsSeasonLink = true
 
     @State private var viewModel = EpisodeDetailViewModel()
 
@@ -111,17 +112,19 @@ struct EpisodeDetailView: View {
                 }
             }
 
-            Section {
-                NavigationLink {
-                    SeasonDetailView(
-                        showId: episode.tmdbShowId,
-                        showName: episode.showName,
-                        seasonNumber: episode.season,
-                        seasonName: nil,
-                        dataStore: dataStore
-                    )
-                } label: {
-                    Label("View Full Season", systemImage: "list.bullet")
+            if showsSeasonLink {
+                Section {
+                    NavigationLink {
+                        SeasonDetailView(
+                            showId: episode.tmdbShowId,
+                            showName: episode.showName,
+                            seasonNumber: episode.season,
+                            seasonName: nil,
+                            dataStore: dataStore
+                        )
+                    } label: {
+                        Label("View Full Season", systemImage: "list.bullet")
+                    }
                 }
             }
         }
